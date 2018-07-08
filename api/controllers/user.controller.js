@@ -98,9 +98,7 @@ module.exports.changeProfilePicture = async (req, res) => {
   const imagePath = `${config.MEDIA_FOLDER}/${
     req.decodedToken.user.username
   }/profilePictures/${req.file.filename}`;
-  const url = `${req.protocol}://${req.hostname}:${req.app.get(
-    'port',
-  )}/${imagePath}`;
+  const url = `${req.protocol}://${req.hostname}/${imagePath}`;
   const user = await User.findByIdAndUpdate(req.decodedToken.user._id, {
     $set: {
       profilePicture: {
