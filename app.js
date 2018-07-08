@@ -5,7 +5,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const compression = require('compression');
 const bodyParser = require('body-parser');
-const path = require('path');
+// const path = require('path');
 
 const routes = require('./api/routes');
 const config = require('./api/config');
@@ -29,10 +29,10 @@ app.use(
     extended: false,
   }),
 );
-app.use(
-  `/${config.MEDIA_FOLDER}`,
-  express.static(path.join(__dirname, `${config.MEDIA_FOLDER}`)),
-);
+// app.use(
+//   `/${config.MEDIA_FOLDER}`,
+//   express.static(path.join(__dirname, `${config.MEDIA_FOLDER}`)),
+// );
 app.use('/api', routes);
 
 // 500 internal server error handler
