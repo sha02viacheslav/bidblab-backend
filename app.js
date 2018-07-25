@@ -2,10 +2,10 @@ require('./api/config/mongoDB');
 const express = require('express');
 const logger = require('morgan');
 const helmet = require('helmet');
+const path = require('path');
 const cors = require('cors');
 const compression = require('compression');
 const bodyParser = require('body-parser');
-// const path = require('path');
 
 const routes = require('./api/routes');
 const config = require('./api/config');
@@ -29,10 +29,12 @@ app.use(
     extended: false,
   }),
 );
-// app.use(
-//   `/${config.MEDIA_FOLDER}`,
-//   express.static(path.join(__dirname, `${config.MEDIA_FOLDER}`)),
-// );
+if (process.env.NODE_ENV !== 'production') {
+  app.use(
+    `/${config.MEDIA_FOLDER}`,
+    express.static(path.join(__dirname, config.MEDIA_FOLDER)),
+  );
+}
 app.use('/api', routes);
 
 // 500 internal server error handler

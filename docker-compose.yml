@@ -26,6 +26,7 @@ services:
       - "27017:27017"
     volumes:
       - /data/db:/data/db
+      - /root/database:/root/database
     deploy:
       placement:
         constraints: [node.role == manager]
