@@ -30,4 +30,4 @@ The backend for Bidblab web app.
       1. `docker swarm init`
       2. `docker stack deploy -c docker-compose.yml bidblab-backend`
 
-&#9400; Omar Doma 2018
+&#9400; Dev Pony 2018

@@ -99,7 +99,7 @@ module.exports.changeProfilePicture = async (req, res) => {
     req.decodedToken.user.username
   }/profilePictures/${req.file.filename}`;
   const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
-    req.hostname
+    req.headers.host
   }/${imagePath}`;
   const user = await User.findByIdAndUpdate(req.decodedToken.user._id, {
     $set: {
