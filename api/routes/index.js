@@ -181,6 +181,7 @@ router.patch(
 
 // --------------------------------Common-------------------------------------
 router.get('/common/getQuestions', errorHandler(commonCtrl.getQuestions));
+router.get('/common/getQuestionsCanAnswer', errorHandler(commonCtrl.getQuestionsCanAnswer));
 router.get(
   '/common/getQuestion/:questionId',
   errorHandler(commonCtrl.getQuestion),

@@ -54,6 +54,76 @@ module.exports.getQuestions = async (req, res) => {
   });
 };
 
+module.exports.getQuestionsCanAnswer = async (req, res) => {
+  const { offset = 0, limit = 20, search } = req.query;
+  const query_search = search
+    ? {
+      $or: [
+        {
+          title: {
+            $regex: search,
+            $options: 'i',
+          },
+        },
+        {
+          tags: {
+            $regex: search,
+            $options: 'i',
+          },
+        },
+      ],
+    }
+    : {};
+
+  const query_userId = {
+    $and: [
+      {
+        "answers": {
+          "$not": {
+            "$elemMatch": {
+              "answerer": req.query.userId
+            }
+          }
+        }
+      },
+      {
+        "asker": {
+          "$ne": req.query.userId
+        }
+      },
+    ],
+  };
+
+  const resolvedPromises = await Promise.all([
+    Question.count(query_search).exec(),
+    Question.find(query_search).find(query_userId)
+      .lean()
+      .skip(+offset)
+      .limit(+limit)
+      .populate({
+        path: 'asker',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .populate({
+        path: 'answers.answerer',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .exec(),
+  ]);
+  const count = resolvedPromises[0];
+  const questions = resolvedPromises[1];
+  res.status(200).json({
+    err: null,
+    msg: 'Questions retrieved successfully.',
+    data: {
+      count,
+      questions,
+    },
+  });
+};
+
 module.exports.getQuestion = async (req, res) => {
   if (!Validations.isObjectId(req.params.questionId)) {
     return res.status(422).json({
@@ -140,21 +210,21 @@ module.exports.getQuestionsWithYourAnswers = async (req, res) => {
 
   const query = {
     "$or": [
-        {
-            "answers": {
-                "$elemMatch": {
-                    "answerer": req.params.answererId
-                }
-            }
+      {
+        "answers": {
+          "$elemMatch": {
+            "answerer": req.params.answererId
+          }
         }
+      }
     ]
   };
 
   const projection = {
     "answers": {
-        "$elemMatch": {
-            "answerer": req.params.answererId
-        }
+      "$elemMatch": {
+        "answerer": req.params.answererId
+      }
     },
   };
 
