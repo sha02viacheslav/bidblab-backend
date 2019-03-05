@@ -63,18 +63,19 @@ module.exports.getQuestion = async (req, res) => {
     });
   }
   const question = await Question.findById(req.params.questionId)
-    .lean()
-    .populate({
-      path: 'asker',
-      select:
-        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-    })
-    .populate({
-      path: 'answers.answerer',
-      select:
-        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-    })
-    .exec();
+  .lean()
+  .populate({
+    path: 'asker',
+    select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .populate({
+    path: 'answers.answerer',
+    select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .exec();
+    
   if (!question) {
     return res
       .status(404)
@@ -86,6 +87,111 @@ module.exports.getQuestion = async (req, res) => {
     data: question,
   });
 };
+
+module.exports.getQuestionsByAskerId = async (req, res) => {
+  if (!Validations.isObjectId(req.params.askerId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'askerId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  const resolvedPromises = await Promise.all([
+    Question.count( { asker: req.params.askerId } ).exec(),
+    Question.find( { asker: req.params.askerId } )
+      .lean()
+      .populate({
+        path: 'asker',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .populate({
+        path: 'answers.answerer',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .exec(),
+  ]);
+  const count = resolvedPromises[0];
+  const questions = resolvedPromises[1];
+  if (count == 0) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Question not found.', data: null });
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Questions retrieved successfully.',
+    data: {
+      count,
+      questions,
+    },
+  });
+};
+
+module.exports.getQuestionsWithYourAnswers = async (req, res) => {
+  if (!Validations.isObjectId(req.params.answererId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'answererId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+
+  const query = {
+    "$or": [
+        {
+            "answers": {
+                "$elemMatch": {
+                    "answerer": req.params.answererId
+                }
+            }
+        }
+    ]
+  };
+
+  const projection = {
+    "answers": {
+        "$elemMatch": {
+            "answerer": req.params.answererId
+        }
+    },
+  };
+
+  const resolvedPromises = await Promise.all([
+    Question.count(query).exec(),
+    Question.find(query, projection)
+      .lean()
+      .populate({
+        path: 'asker',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .populate({
+        path: 'answers.answerer',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .exec(),
+  ]);
+  const count = resolvedPromises[0];
+  //improve in the future.
+  const questionsWithYourAnswers = resolvedPromises[1];
+  if (count == 0) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Answer not found.', data: null });
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Answers retrieved successfully.',
+    data: {
+      count,
+      questionsWithYourAnswers,
+    },
+  });
+};
+
 
 module.exports.addQuestion = async (req, res) => {
   const schema = joi

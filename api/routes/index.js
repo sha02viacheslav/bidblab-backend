@@ -185,6 +185,14 @@ router.get(
   '/common/getQuestion/:questionId',
   errorHandler(commonCtrl.getQuestion),
 );
+router.get(
+  '/common/getQuestionsByAskerId/:askerId',
+  errorHandler(commonCtrl.getQuestionsByAskerId),
+);
+router.get(
+  '/common/getQuestionsWithYourAnswers/:answererId',
+  errorHandler(commonCtrl.getQuestionsWithYourAnswers),
+);
 router.post(
   '/common/addQuestion',
   isAuthenticated,
