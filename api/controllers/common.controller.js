@@ -1,8 +1,14 @@
 const mongoose = require('mongoose');
 const joi = require('joi');
 const Validations = require('../utils/validations');
+const config = require('../config');
+const fs = require('fs-extra');
+
+const moment = require('moment');
+const path = require('path');
 
 const Question = mongoose.model('Question');
+const User = mongoose.model('User');
 
 module.exports.getQuestions = async (req, res) => {
   const { offset = 0, limit = 20, search } = req.query;
@@ -378,5 +384,58 @@ module.exports.addAnswer = async (req, res) => {
     err: null,
     msg: 'Answer was added successfully.',
     data: answer,
+  });
+};
+
+module.exports.changeQuestionPicture = async (req, res) => {
+  if (!req.file) {
+    return res.status(422).json({
+      err: null,
+      msg:
+        'Image upload has encountered an error, supported image types are: png, jpeg, gif.',
+      data: null,
+    });
+  }
+  const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
+  const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
+    req.headers.host
+  }/${imagePath}`;
+  
+  const existingQuestion = await Question.findOne({
+    title: {
+      $regex: req.body.title,
+      $options: 'i',
+    },
+  })
+    .lean()
+    .exec();
+
+  if (existingQuestion) {  
+    const question = await Question.findByIdAndUpdate(existingQuestion._id, {
+      $set: {
+        questionPicture: {
+          path: imagePath,
+          url,
+        },
+      },
+    })
+      .lean()
+      .exec();
+  }
+  if (!question) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Account not found.', data: null });
+  }
+  if (question.questionPicture) {
+    await fs.remove(path.resolve('./', question.questionPicture.path));
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Question Picture was changed successfully.',
+    data: {
+      url,
+      path: imagePath,
+    },
   });
 };

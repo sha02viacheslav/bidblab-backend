@@ -34,6 +34,10 @@ const questionSchema = mongoose.Schema({
     default: Date.now,
   },
   updatedAt: Date,
+  questionPicture: {
+    url: String,
+    path: String,
+  },
 });
 
 mongoose.model('Question', questionSchema);

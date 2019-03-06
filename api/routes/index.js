@@ -62,11 +62,16 @@ const isAdmin = (req, res, next) => {
   }
 };
 
-const upload = (folder, allowedTypes) => (req, res, next) =>
+const upload_profile = (folder, allowedTypes) => (req, res, next) =>
   multer(`${req.decodedToken.user.username}/${folder}`, allowedTypes).single(
     'file',
   )(req, res, next);
 
+
+  const upload_question = (folder, allowedTypes) => (req, res, next) =>
+  multer(`${folder}`, allowedTypes).single(
+    'file',
+  )(req, res, next);
 // -------------------------------Auth------------------------------------------
 router.post('/auth/signup', isNotAuthenticated, errorHandler(authCtrl.signup));
 router.post(
@@ -175,7 +180,7 @@ router.patch(
 router.patch(
   '/user/changeProfilePicture',
   isAuthenticated,
-  upload('profilePictures', ['image']),
+  upload_profile('profilePictures', ['image']),
   errorHandler(userCtrl.changeProfilePicture),
 );
 
@@ -203,6 +208,13 @@ router.post(
   '/common/addAnswer/:questionId',
   isAuthenticated,
   errorHandler(commonCtrl.addAnswer),
+);
+
+router.patch(
+  '/common/changeQuestionPicture',
+  isAuthenticated,
+  upload_question('questionPictures', ['image']),
+  errorHandler(commonCtrl.changeQuestionPicture),
 );
 
 // -----------------------------------File-------------------------------------
