@@ -388,7 +388,7 @@ module.exports.addAnswer = async (req, res) => {
 };
 
 module.exports.changeQuestionPicture = async (req, res) => {
-  if (!req.file) {
+  if (!req.file || !req.body.questionId) {
     return res.status(422).json({
       err: null,
       msg:
@@ -396,32 +396,22 @@ module.exports.changeQuestionPicture = async (req, res) => {
       data: null,
     });
   }
+  
   const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
   const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
-    req.headers.host
-  }/${imagePath}`;
-  
-  const existingQuestion = await Question.findOne({
-    title: {
-      $regex: req.body.title,
-      $options: 'i',
+    req.headers.host}/${imagePath}`;
+
+  const question = await Question.findByIdAndUpdate(req.body.questionId, {
+    $set: {
+      questionPicture: {
+        path: imagePath,
+        url: url,
+      },
     },
   })
-    .lean()
-    .exec();
+  .lean()
+  .exec();
 
-  if (existingQuestion) {  
-    const question = await Question.findByIdAndUpdate(existingQuestion._id, {
-      $set: {
-        questionPicture: {
-          path: imagePath,
-          url,
-        },
-      },
-    })
-      .lean()
-      .exec();
-  }
   if (!question) {
     return res
       .status(404)
@@ -430,12 +420,18 @@ module.exports.changeQuestionPicture = async (req, res) => {
   if (question.questionPicture) {
     await fs.remove(path.resolve('./', question.questionPicture.path));
   }
-  res.status(200).json({
-    err: null,
-    msg: 'Question Picture was changed successfully.',
-    data: {
-      url,
-      path: imagePath,
-    },
-  });
+  const newQuestion = await Question.findById(question._id);
+
+  if(newQuestion && newQuestion.questionPicture){
+    res.status(200).json({
+      err: null,
+      msg: 'Question Picture was changed successfully.',
+      data: newQuestion,
+    });
+  }
+  else{
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Add question picture error.', data: null });
+  }
 };
