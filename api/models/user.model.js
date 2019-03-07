@@ -1,5 +1,17 @@
 const mongoose = require('mongoose');
 
+const followSchema = mongoose.Schema({
+  follower: {
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'User',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: Date,
+});
+
 const userSchema = mongoose.Schema({
   firstName: {
     type: String,
@@ -34,6 +46,7 @@ const userSchema = mongoose.Schema({
     url: String,
     path: String,
   },
+  follows: [followSchema],
   resetPasswordToken: String,
   resetPasswordTokenExpiry: Date,
   verificationToken: String,

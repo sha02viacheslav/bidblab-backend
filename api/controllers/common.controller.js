@@ -435,3 +435,73 @@ module.exports.changeQuestionPicture = async (req, res) => {
       .json({ err: null, msg: 'Add question picture error.', data: null });
   }
 };
+
+module.exports.addFollow = async (req, res) => {
+  if (!Validations.isObjectId(req.params.questionId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'questionId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  const question = await Question.findById(req.params.questionId).exec();
+  if (!question) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Question not found.', data: null });
+  }
+  if (req.decodedToken.user._id && req.decodedToken.user._id === question.asker._id) {
+    return res.status(403).json({
+      err: null,
+      msg: 'You can not follow your question.',
+      data: null,
+    });
+  }
+  const alreadyFollowed = question.follows.some(
+    follow => follow.follower == req.decodedToken.user._id,
+  );
+  if (alreadyFollowed) {
+    return res.status(403).json({
+      err: null,
+      msg: 'You have already followed this question.',
+      data: null,
+    });
+  }
+  const temp = {
+    follower: req.decodedToken.user._id,
+  }
+  let follow = question.follows.create(temp);
+  question.follows.push(follow);
+  await question.save();
+
+  const newQuestion = await Question.findById(req.params.questionId)
+      .lean()
+      .populate({
+        path: 'asker',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .populate({
+        path: 'answers.answerer',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .populate({
+        path: 'follows.follower',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .exec();
+
+  if (!newQuestion) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Follow was not add.', data: null });
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Follow was added successfully.',
+    data: newQuestion,
+  });
+
+}

@@ -1,5 +1,17 @@
 const mongoose = require('mongoose');
 
+const followSchema = mongoose.Schema({
+  follower: {
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'User',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: Date,
+});
+
 const answerSchema = mongoose.Schema({
   answerer: {
     type: mongoose.SchemaTypes.ObjectId,
@@ -28,6 +40,7 @@ const questionSchema = mongoose.Schema({
     trim: true,
   },
   answers: [answerSchema],
+  follows: [followSchema],
   tags: [String],
   createdAt: {
     type: Date,

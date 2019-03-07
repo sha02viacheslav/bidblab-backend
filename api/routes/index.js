@@ -217,6 +217,12 @@ router.patch(
   errorHandler(commonCtrl.changeQuestionPicture),
 );
 
+router.get(
+  '/common/addFollow/:questionId',
+  isAuthenticated,
+  errorHandler(commonCtrl.addFollow),
+);
+
 // -----------------------------------File-------------------------------------
 router.get(
   '/file/:parentFolder/:subFolder/:fileName',
