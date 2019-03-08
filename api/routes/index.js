@@ -205,7 +205,7 @@ router.post(
   errorHandler(commonCtrl.addQuestion),
 );
 router.post(
-  '/common/addAnswer/:questionId',
+  '/common/addAnswer/:questionId/:answertype',
   isAuthenticated,
   errorHandler(commonCtrl.addAnswer),
 );

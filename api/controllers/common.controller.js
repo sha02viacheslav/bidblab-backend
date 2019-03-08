@@ -307,6 +307,7 @@ module.exports.addQuestion = async (req, res) => {
   result.value.asker = req.decodedToken.admin
     ? null
     : req.decodedToken.user._id;
+  result.value.credit = 5;
   let newQuestion = await Question.create(result.value);
   if (!req.decodedToken.admin) {
     newQuestion = newQuestion.toObject();
@@ -372,6 +373,10 @@ module.exports.addAnswer = async (req, res) => {
   result.value.answerer = req.decodedToken.admin
     ? null
     : req.decodedToken.user._id;
+  result.value.answertype = req.params.answertype;
+  result.value.credit = result.value.answertype == 1
+    ? 8
+    : 4;
   let answer = question.answers.create(result.value);
   question.answers.push(answer);
   await question.save();

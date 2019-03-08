@@ -44,6 +44,12 @@ const answerSchema = mongoose.Schema({
   thumbdowncnt: {
     type: Number,
   },
+  credit: {
+    type: Number,
+  },
+  answertype: {
+    type: Number,
+  },
   thumbs: [thumbSchema],
   createdAt: {
     type: Date,
@@ -65,6 +71,9 @@ const questionSchema = mongoose.Schema({
   answers: [answerSchema],
   follows: [followSchema],
   tags: [String],
+  credit: {
+    type: Number,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
