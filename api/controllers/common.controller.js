@@ -268,14 +268,13 @@ module.exports.getQuestionsWithYourAnswers = async (req, res) => {
   });
 };
 
-
 module.exports.addQuestion = async (req, res) => {
   const schema = joi
     .object({
       title: joi
         .string()
         .trim()
-        .max(200)
+        .max(500)
         .required(),
       tags: joi.array().items(joi.string().trim()),
     })
@@ -501,6 +500,145 @@ module.exports.addFollow = async (req, res) => {
   res.status(200).json({
     err: null,
     msg: 'Follow was added successfully.',
+    data: newQuestion,
+  });
+
+}
+
+module.exports.addThumb = async (req, res) => {
+  if (!Validations.isObjectId(req.params.questionId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'questionId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  if (!Validations.isObjectId(req.params.answerId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'answerId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+
+  const question = await Question.findById(req.params.questionId).exec();
+  if (!question) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Question not found.', data: null });
+  }
+  if (req.decodedToken.user._id && req.decodedToken.user._id == question.asker._id) {
+    return res.status(403).json({
+      err: null,
+      msg: 'You can not thumb your question.',
+      data: null,
+    });
+  }
+  const answer = question.answers.id(req.params.answerId);
+  if (!answer) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Answer not found.', data: null });
+  }
+  if (req.decodedToken.user._id && req.decodedToken.user._id == answer.answerer._id) {
+    return res.status(403).json({
+      err: null,
+      msg: 'You can not thumb your answer.',
+      data: null,
+    });
+  }
+  if(!answer.thumbupcnt){
+    answer.thumbupcnt = 0;
+  }
+  if(!answer.thumbdowncnt){
+    answer.thumbdowncnt = 0;
+  }
+  const alreadyThumbed = answer.thumbs.find(
+    thumb => thumb.thumber == req.decodedToken.user._id,
+  );
+  if (alreadyThumbed) {
+    if(alreadyThumbed.thumbstate == req.params.thumbType){
+      if(req.params.thumbType == 1){
+        answer.thumbupcnt = answer.thumbupcnt - 1;
+      }
+      if(req.params.thumbType == 2){
+        answer.thumbdowncnt = answer.thumbdowncnt - 1;
+      }
+      alreadyThumbed.remove();
+    }
+    else{
+      if(req.params.thumbType == 1){
+        answer.thumbupcnt = answer.thumbupcnt + 1;
+        if(alreadyThumbed.thumbstate == 2){
+          answer.thumbdowncnt = answer.thumbdowncnt - 1;
+        }
+      }
+      else if(req.params.thumbType == 2){
+        answer.thumbdowncnt = answer.thumbdowncnt + 1;
+        if(alreadyThumbed.thumbstate == 1){
+          answer.thumbupcnt = answer.thumbupcnt - 1;
+        }
+      }
+      alreadyThumbed.thumbstate = req.params.thumbType;
+    }
+  }
+  else{
+    const currentThumbed = {
+      thumber: req.decodedToken.user._id,
+      thumbstate: req.params.thumbType,
+    }
+    if(req.params.thumbType == 1){
+      answer.thumbupcnt = answer.thumbupcnt + 1;
+    }
+    if(req.params.thumbType == 2){
+      answer.thumbdowncnt = answer.thumbdowncnt + 1;
+    }
+    let thumb = answer.thumbs.create(currentThumbed);
+    answer.thumbs.push(thumb);
+  }
+
+  if(answer.thumbupcnt < 0){
+    answer.thumbupcnt = 0;
+  }
+  if(answer.thumbdowncnt < 0){
+    answer.thumbdowncnt = 0;
+  }
+
+  await answer.save();
+  await question.save();
+
+  const newQuestion = await Question.findById(req.params.questionId)
+      .lean()
+      .populate({
+        path: 'asker',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .populate({
+        path: 'answers.answerer',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .populate({
+        path: 'follows.follower',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .populate({
+        path: 'answers.thumbs.thumber',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .exec();
+
+  if (!newQuestion) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Thumb was not add.', data: null });
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Thumb was added successfully.',
     data: newQuestion,
   });
 

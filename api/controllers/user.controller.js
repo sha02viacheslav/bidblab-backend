@@ -24,6 +24,35 @@ module.exports.updateProfile = async (req, res) => {
         .trim()
         .lowercase()
         .email(),
+      aboutme: joi
+        .string(),
+      phone: joi
+        .string(),
+      tags: joi
+        .array()
+        .items(
+          joi.string()
+        ),
+      birthday: joi
+        .date(),
+      gender: joi
+        .string(),
+      physicaladdress: joi
+        .string(),
+      physicalcity: joi
+        .string(),
+      physicalstate: joi
+        .string(),
+      physicalzipcode: joi
+        .string(),
+      shippingaddress: joi
+        .string(),
+      shippingcity: joi
+        .string(),
+      shippingstate: joi
+        .string(),
+      shippingzipcode: joi
+        .string(),
     })
     .options({
       stripUnknown: true,

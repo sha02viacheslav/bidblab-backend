@@ -37,6 +37,47 @@ const userSchema = mongoose.Schema({
     trim: true,
     lowercase: true,
   },
+  aboutme: {
+    type: String,
+  },
+  phone: {
+    type: String,
+  },
+  tags: {
+    type: [String],
+  },
+  birthday: {
+    type: String,
+  },
+  gender: {
+    type: String,
+  },
+  physicaladdress: {
+    type: String,
+  },
+  physicalcity: {
+    type: String,
+  },
+  physicalstate: {
+    type: String,
+  },
+  physicalzipcode: {
+    type: String,
+  },
+  shippingaddress: {
+    type: String,
+  },
+  shippingcity: {
+    type: String,
+  },
+  shippingstate: {
+    type: String,
+  },
+  shippingzipcode: {
+    type: String,
+  },
+
+
   password: {
     type: String,
     required: true,

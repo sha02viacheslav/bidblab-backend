@@ -12,6 +12,22 @@ const followSchema = mongoose.Schema({
   updatedAt: Date,
 });
 
+const thumbSchema = mongoose.Schema({
+  thumber: {
+    type: mongoose.SchemaTypes.ObjectId,
+    ref: 'User',
+  },
+  thumbstate: {
+    type: Number,
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: Date,
+});
+
 const answerSchema = mongoose.Schema({
   answerer: {
     type: mongoose.SchemaTypes.ObjectId,
@@ -22,6 +38,13 @@ const answerSchema = mongoose.Schema({
     required: true,
     trim: true,
   },
+  thumbupcnt: {
+    type: Number,
+  },
+  thumbdowncnt: {
+    type: Number,
+  },
+  thumbs: [thumbSchema],
   createdAt: {
     type: Date,
     default: Date.now,

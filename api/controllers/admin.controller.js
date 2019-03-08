@@ -440,6 +440,7 @@ module.exports.updateAnswer = async (req, res) => {
 };
 
 module.exports.deleteAnswer = async (req, res) => {
+  debugger;
   if (
     !(
       Validations.isObjectId(req.params.questionId) &&

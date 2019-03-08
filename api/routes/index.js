@@ -167,7 +167,7 @@ router.patch(
 router.delete(
   '/admin/deleteAnswer/:questionId/:answerId',
   isAuthenticated,
-  isAdmin,
+  // isAdmin,
   errorHandler(adminCtrl.deleteAnswer),
 );
 
@@ -221,6 +221,12 @@ router.get(
   '/common/addFollow/:questionId',
   isAuthenticated,
   errorHandler(commonCtrl.addFollow),
+);
+
+router.get(
+  '/common/addThumb/:questionId/:answerId/:thumbType',
+  isAuthenticated,
+  errorHandler(commonCtrl.addThumb),
 );
 
 // -----------------------------------File-------------------------------------
