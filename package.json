@@ -25,6 +25,7 @@
     "nodemailer": "^4.6.5",
     "nodemailer-html-to-text": "^2.1.0",
     "nodemailer-mailgun-transport": "^1.4.0",
+    "nodemon": "^1.18.10",
     "rand-token": "^0.4.0",
     "socket.io": "^2.1.1"
   },
