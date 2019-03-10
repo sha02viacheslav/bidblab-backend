@@ -185,6 +185,26 @@ module.exports.getUserDataByuserId = async (req, res) => {
       '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
   })
   .exec();
+  const questions = await Question.find( { asker: req.params.userId } )
+      .lean()
+      .populate({
+        path: 'asker',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .populate({
+        path: 'answers.answerer',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .exec();
+
+  if (!questions) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Question not found.', data: null });
+  }
+
     
   if (!user) {
     return res
@@ -196,6 +216,7 @@ module.exports.getUserDataByuserId = async (req, res) => {
     msg: 'User retrieved successfully.',
     data: {
       user,
+      questions,
     }
   });
 };
