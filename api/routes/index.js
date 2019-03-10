@@ -192,7 +192,8 @@ router.get(
   errorHandler(commonCtrl.getQuestion),
 );
 router.get(
-  '/common/getQuestionsByAskerId/:askerId',
+  '/common/getQuestionsByAskerId/',
+  isAuthenticated,
   errorHandler(commonCtrl.getQuestionsByAskerId),
 );
 router.get(

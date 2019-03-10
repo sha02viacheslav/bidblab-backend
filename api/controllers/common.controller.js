@@ -165,7 +165,7 @@ module.exports.getQuestion = async (req, res) => {
 };
 
 module.exports.getQuestionsByAskerId = async (req, res) => {
-  if (!Validations.isObjectId(req.params.askerId)) {
+  if (!Validations.isObjectId(req.decodedToken.user._id)) {
     return res.status(422).json({
       err: null,
       msg: 'askerId parameter must be a valid ObjectId.',
@@ -173,8 +173,8 @@ module.exports.getQuestionsByAskerId = async (req, res) => {
     });
   }
   const resolvedPromises = await Promise.all([
-    Question.count( { asker: req.params.askerId } ).exec(),
-    Question.find( { asker: req.params.askerId } )
+    Question.count( { asker: req.decodedToken.user._id } ).exec(),
+    Question.find( { asker: req.decodedToken.user._id } )
       .lean()
       .populate({
         path: 'asker',
