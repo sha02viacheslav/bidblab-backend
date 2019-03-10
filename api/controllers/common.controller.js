@@ -87,19 +87,19 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
         "answers": {
           "$not": {
             "$elemMatch": {
-              "answerer": req.query.userId
+              "answerer": req.decodedToken.user._id
             }
           }
         }
       },
       {
         "asker": {
-          "$ne": req.query.userId
+          "$ne": req.decodedToken.user._id
         }
       },
     ],
   };
-
+debugger;
   const resolvedPromises = await Promise.all([
     Question.count(query_search).exec(),
     Question.find(query_search).find(query_userId)
@@ -161,6 +161,42 @@ module.exports.getQuestion = async (req, res) => {
     err: null,
     msg: 'Question retrieved successfully.',
     data: question,
+  });
+};
+
+module.exports.getUserDataByuserId = async (req, res) => {
+  if (!Validations.isObjectId(req.params.userId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'userId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  const user = await User.findById(req.params.userId)
+  .lean()
+  .populate({
+    path: '_id',
+    select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .populate({
+    path: 'answers.answerer',
+    select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .exec();
+    
+  if (!user) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'User not found.', data: null });
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'User retrieved successfully.',
+    data: {
+      user,
+    }
   });
 };
 

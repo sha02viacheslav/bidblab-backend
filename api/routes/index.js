@@ -11,6 +11,7 @@ const commonCtrl = require('../controllers/common.controller');
 const router = express.Router();
 
 const isAuthenticated = (req, res, next) => {
+  debugger;
   const token = req.headers.authorization;
   if (!token) {
     return res.status(401).json({
@@ -186,10 +187,17 @@ router.patch(
 
 // --------------------------------Common-------------------------------------
 router.get('/common/getQuestions', errorHandler(commonCtrl.getQuestions));
-router.get('/common/getQuestionsCanAnswer', errorHandler(commonCtrl.getQuestionsCanAnswer));
+router.get(
+  '/common/getQuestionsCanAnswer',
+  isAuthenticated,
+  errorHandler(commonCtrl.getQuestionsCanAnswer));
 router.get(
   '/common/getQuestion/:questionId',
   errorHandler(commonCtrl.getQuestion),
+);
+router.get(
+  '/common/getUserDataByuserId/:userId',
+  errorHandler(commonCtrl.getUserDataByuserId),
 );
 router.get(
   '/common/getQuestionsByAskerId/',
