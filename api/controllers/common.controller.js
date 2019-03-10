@@ -205,8 +205,49 @@ module.exports.getQuestionsByAskerId = async (req, res) => {
   });
 };
 
+module.exports.getMyCredits = async (req, res) => {
+  if (!Validations.isObjectId(req.decodedToken.user._id)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'userId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  const ObjectId = mongoose.Types.ObjectId;
+  
+  let question = await Question.aggregate(
+    [
+      { 
+        $match: {
+          "asker": ObjectId(req.decodedToken.user._id)   
+        }
+      },
+      {
+        $group: {
+          _id: "null", 
+          count: {
+            $sum: "$credit"
+          }
+        }
+      }
+    ]
+  )
+  .exec();
+  debugger;
+  let question_credits = question[0].count;
+  res.status(200).json({
+    err: null,
+    msg: 'Questions retrieved successfully.',
+    data: {
+      question_credits,
+      question_credits,
+      question_credits,
+    },
+  });
+};
+
 module.exports.getQuestionsWithYourAnswers = async (req, res) => {
-  if (!Validations.isObjectId(req.params.answererId)) {
+  if (!Validations.isObjectId(req.decodedToken.user._id)) {
     return res.status(422).json({
       err: null,
       msg: 'answererId parameter must be a valid ObjectId.',
@@ -219,7 +260,7 @@ module.exports.getQuestionsWithYourAnswers = async (req, res) => {
       {
         "answers": {
           "$elemMatch": {
-            "answerer": req.params.answererId
+            "answerer": req.decodedToken.user._id
           }
         }
       }
@@ -229,7 +270,7 @@ module.exports.getQuestionsWithYourAnswers = async (req, res) => {
   const projection = {
     "answers": {
       "$elemMatch": {
-        "answerer": req.params.answererId
+        "answerer": req.decodedToken.user._id
       }
     },
   };

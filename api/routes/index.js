@@ -197,7 +197,13 @@ router.get(
   errorHandler(commonCtrl.getQuestionsByAskerId),
 );
 router.get(
-  '/common/getQuestionsWithYourAnswers/:answererId',
+  '/common/getMyCredits/',
+  isAuthenticated,
+  errorHandler(commonCtrl.getMyCredits),
+);
+router.get(
+  '/common/getQuestionsWithYourAnswers/',
+  isAuthenticated,
   errorHandler(commonCtrl.getQuestionsWithYourAnswers),
 );
 router.post(
