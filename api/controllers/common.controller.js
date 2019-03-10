@@ -233,15 +233,70 @@ module.exports.getMyCredits = async (req, res) => {
     ]
   )
   .exec();
-  debugger;
-  let question_credits = question[0].count;
+  let question_credits = 0;
+  if(question){
+    if(question[0]){
+      if(question[0].count){
+        question_credits = question[0].count;
+      }
+    }
+  }
+  
+
+  question = await Question.aggregate(
+    [
+      { 
+        $match: { 
+          "answers":{
+            "$elemMatch": {
+              "answerer": ObjectId(req.decodedToken.user._id)
+            }
+          }   
+        }
+      },
+      { $unwind : "$answers" },
+      { 
+        $match: { 
+          "answers.answerer": ObjectId(req.decodedToken.user._id)  
+        }
+      },
+      { $project : { "answers" : 1, "_id": 0 } },
+      {
+        $group: {
+          _id: "null", 
+          count: {
+            $sum: "$answers.credit"
+          }
+        }
+      }
+    ]
+  )
+  .exec();
+  let answer_credits = 0;
+  if(question){
+    if(question[0]){
+      if(question[0].count){
+        answer_credits = question[0].count;
+      }
+    }
+  }
+  let referal_credits = 0;
+  if(question){
+    if(question[1]){
+      if(question[0].count){
+        referal_credits = question[0].count;
+      }
+    }
+  }
+
+
   res.status(200).json({
     err: null,
     msg: 'Questions retrieved successfully.',
     data: {
       question_credits,
-      question_credits,
-      question_credits,
+      answer_credits,
+      referal_credits,
     },
   });
 };
@@ -294,11 +349,7 @@ module.exports.getQuestionsWithYourAnswers = async (req, res) => {
   const count = resolvedPromises[0];
   //improve in the future.
   const questionsWithYourAnswers = resolvedPromises[1];
-  if (count == 0) {
-    return res
-      .status(404)
-      .json({ err: null, msg: 'Answer not found.', data: null });
-  }
+ 
   res.status(200).json({
     err: null,
     msg: 'Answers retrieved successfully.',
