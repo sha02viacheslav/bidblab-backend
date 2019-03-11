@@ -25,7 +25,7 @@ module.exports.getQuestions = async (req, res) => {
           },
         },
         {
-          tags: {
+          tag: {
             $regex: search,
             $options: 'i',
           },
@@ -75,7 +75,7 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
           },
         },
         {
-          tags: {
+          tag: {
             $regex: search,
             $options: 'i',
           },
@@ -141,18 +141,18 @@ module.exports.getQuestion = async (req, res) => {
     });
   }
   const question = await Question.findById(req.params.questionId)
-  .lean()
-  .populate({
-    path: 'asker',
-    select:
-      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  })
-  .populate({
-    path: 'answers.answerer',
-    select:
-      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  })
-  .exec();
+    .lean()
+    .populate({
+      path: 'asker',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'answers.answerer',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
     
   if (!question) {
     return res
@@ -176,24 +176,23 @@ module.exports.getUserDataByuserId = async (req, res) => {
   }
 
   const user = await User.findById(req.params.userId)
-  .lean()
-  .populate({
-    path: '_id',
-    select:
-      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  })
-  .populate({
-    path: 'answers.answerer',
-    select:
-      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  })
-  .exec();
+    .lean()
+    .populate({
+      path: '_id',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'answers.answerer',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
   if (!user) {
     return res
       .status(404)
       .json({ err: null, msg: 'User not found.', data: null });
   }
-
   let resolvedPromises = await Promise.all([
     Question.count( { asker: req.params.userId } ).exec(),
     Question.aggregate([
@@ -206,7 +205,7 @@ module.exports.getUserDataByuserId = async (req, res) => {
         $project: {
           "_id": 0,
           "title": 1,
-          "tags": 1,
+          "tag": 1,
           numberOfAnswers: { $cond: { if: { $isArray: "$answers" }, then: { $size: "$answers" }, else: 0} },
           numberOfFollows: { $cond: { if: { $isArray: "$follows" }, then: { $size: "$follows" }, else: 0} }
         }
@@ -246,14 +245,8 @@ module.exports.getUserDataByuserId = async (req, res) => {
           credit: "$answers.credit",
           "_id": 0,
           "title": 1,
-          "tags": 1, 
+          "tag": 1, 
         }},
-        // {
-        //   $group: {
-        //     content: "$answers", 
-        //     credit: "$answers.credit"
-        //   }
-        // }
       ]
     )
     .exec(),
@@ -417,7 +410,6 @@ module.exports.getQuestionsWithYourAnswers = async (req, res) => {
       data: null,
     });
   }
-
   const query = {
     "$or": [
       {
@@ -429,7 +421,6 @@ module.exports.getQuestionsWithYourAnswers = async (req, res) => {
       }
     ]
   };
-
   const projection = {
     "answers": {
       "$elemMatch": {
@@ -437,7 +428,6 @@ module.exports.getQuestionsWithYourAnswers = async (req, res) => {
       }
     },
   };
-
   const resolvedPromises = await Promise.all([
     Question.count(query).exec(),
     Question.find(query, projection)
@@ -476,7 +466,11 @@ module.exports.addQuestion = async (req, res) => {
         .trim()
         .max(500)
         .required(),
-      tags: joi.array().items(joi.string().trim()),
+      tag: joi
+        .string()
+        .trim()
+        .max(15)
+        .required(),
     })
     .options({
       stripUnknown: true,
@@ -846,5 +840,4 @@ module.exports.addThumb = async (req, res) => {
     msg: 'Thumb was added successfully.',
     data: newQuestion,
   });
-
 }

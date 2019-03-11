@@ -305,7 +305,10 @@ module.exports.updateQuestion = async (req, res) => {
         .string()
         .trim()
         .max(200),
-      tags: joi.array().items(joi.string().trim()),
+      tag: joi
+        .string()
+        .trim()
+        .max(15),
     })
     .options({
       stripUnknown: true,

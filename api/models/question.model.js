@@ -70,7 +70,11 @@ const questionSchema = mongoose.Schema({
   },
   answers: [answerSchema],
   follows: [followSchema],
-  tags: [String],
+  tag: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   credit: {
     type: Number,
   },
