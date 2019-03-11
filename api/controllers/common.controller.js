@@ -177,22 +177,16 @@ module.exports.getUserDataByuserId = async (req, res) => {
 
   const user = await User.findById(req.params.userId)
     .lean()
-    .populate({
-      path: '_id',
-      select:
-        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-    })
-    .populate({
-      path: 'answers.answerer',
-      select:
-        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-    })
+    .select(
+      '-password -verificationToken -verificationTokenExpiry -resetPasswordToken -resetPasswordTokenExpiry',
+    )
     .exec();
   if (!user) {
     return res
       .status(404)
       .json({ err: null, msg: 'User not found.', data: null });
   }
+
   let resolvedPromises = await Promise.all([
     Question.count( { asker: req.params.userId } ).exec(),
     Question.aggregate([
@@ -635,73 +629,132 @@ module.exports.changeQuestionPicture = async (req, res) => {
 };
 
 module.exports.addFollow = async (req, res) => {
-  if (!Validations.isObjectId(req.params.questionId)) {
+  if (!Validations.isObjectId(req.params.objectId)) {
     return res.status(422).json({
       err: null,
-      msg: 'questionId parameter must be a valid ObjectId.',
+      msg: 'Id parameter must be a valid ObjectId.',
       data: null,
     });
   }
-  const question = await Question.findById(req.params.questionId).exec();
-  if (!question) {
-    return res
-      .status(404)
-      .json({ err: null, msg: 'Question not found.', data: null });
-  }
-  if (req.decodedToken.user._id && req.decodedToken.user._id === question.asker._id) {
-    return res.status(403).json({
+  if(req.params.followType == 'user'){
+    if (req.decodedToken.user._id && req.decodedToken.user._id == req.params.objectId) {
+      return res.status(403).json({
+        err: null,
+        msg: 'You can not follow you.',
+        data: null,
+      });
+    }
+    const user = await User.findById(req.params.objectId).exec();
+    if (!user) {
+      return res
+        .status(404)
+        .json({ err: null, msg: 'User not found.', data: null });
+    }
+    const alreadyFollowed = user.follows.some(
+      follow => follow.follower == req.decodedToken.user._id,
+    );
+    if (alreadyFollowed) {
+      return res.status(403).json({
+        err: null,
+        msg: 'You have already followed this user.',
+        data: null,
+      });
+    }
+    const temp = {
+      follower: req.decodedToken.user._id,
+    }
+    let follow = user.follows.create(temp);
+    user.follows.push(follow);
+    await user.save();
+
+    const newUser = await User.findById(ObjectId(req.params.objectId))
+        .lean()
+        .populate({
+          path: 'follows.follower',
+          select:
+            '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+        })
+        .exec();
+
+    if (!newUser) {
+      return res
+        .status(404)
+        .json({ err: null, msg: 'Follow was not add.', data: null });
+    }
+    res.status(200).json({
       err: null,
-      msg: 'You can not follow your question.',
-      data: null,
+      msg: 'Follow was added successfully.',
+      data: newUser,
     });
   }
-  const alreadyFollowed = question.follows.some(
-    follow => follow.follower == req.decodedToken.user._id,
-  );
-  if (alreadyFollowed) {
-    return res.status(403).json({
+  else if(req.params.followType == 'question'){
+    const question = await Question.findById(req.params.objectId).exec();
+    if (!question) {
+      return res
+        .status(404)
+        .json({ err: null, msg: 'Question not found.', data: null });
+    }
+    if (req.decodedToken.user._id && req.decodedToken.user._id === question.asker._id) {
+      return res.status(403).json({
+        err: null,
+        msg: 'You can not follow your question.',
+        data: null,
+      });
+    }
+    const alreadyFollowed = question.follows.some(
+      follow => follow.follower == req.decodedToken.user._id,
+    );
+    if (alreadyFollowed) {
+      return res.status(403).json({
+        err: null,
+        msg: 'You have already followed this question.',
+        data: null,
+      });
+    }
+    const temp = {
+      follower: req.decodedToken.user._id,
+    }
+    let follow = question.follows.create(temp);
+    question.follows.push(follow);
+    await question.save();
+
+    const newQuestion = await Question.findById(req.params.objectId)
+        .lean()
+        .populate({
+          path: 'asker',
+          select:
+            '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+        })
+        .populate({
+          path: 'answers.answerer',
+          select:
+            '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+        })
+        .populate({
+          path: 'follows.follower',
+          select:
+            '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+        })
+        .exec();
+
+    if (!newQuestion) {
+      return res
+        .status(404)
+        .json({ err: null, msg: 'Follow was not add.', data: null });
+    }
+    res.status(200).json({
       err: null,
-      msg: 'You have already followed this question.',
+      msg: 'Follow was added successfully.',
+      data: newQuestion,
+    });
+  }
+  else{
+    return res.status(422).json({
+      err: null,
+      msg: 'Follow type parameter must be a valid.',
       data: null,
     });
   }
-  const temp = {
-    follower: req.decodedToken.user._id,
-  }
-  let follow = question.follows.create(temp);
-  question.follows.push(follow);
-  await question.save();
-
-  const newQuestion = await Question.findById(req.params.questionId)
-      .lean()
-      .populate({
-        path: 'asker',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .populate({
-        path: 'answers.answerer',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .populate({
-        path: 'follows.follower',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .exec();
-
-  if (!newQuestion) {
-    return res
-      .status(404)
-      .json({ err: null, msg: 'Follow was not add.', data: null });
-  }
-  res.status(200).json({
-    err: null,
-    msg: 'Follow was added successfully.',
-    data: newQuestion,
-  });
-
 }
 
 module.exports.addThumb = async (req, res) => {

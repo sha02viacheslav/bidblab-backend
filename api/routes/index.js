@@ -232,7 +232,7 @@ router.patch(
 );
 
 router.get(
-  '/common/addFollow/:questionId',
+  '/common/addFollow/:followType/:objectId',
   isAuthenticated,
   errorHandler(commonCtrl.addFollow),
 );
