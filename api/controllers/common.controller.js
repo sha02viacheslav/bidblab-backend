@@ -10,6 +10,9 @@ const path = require('path');
 const Question = mongoose.model('Question');
 const User = mongoose.model('User');
 
+
+const ObjectId = mongoose.Types.ObjectId;
+
 module.exports.getQuestions = async (req, res) => {
   const { offset = 0, limit = 20, search } = req.query;
   const query = search
@@ -99,7 +102,6 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
       },
     ],
   };
-debugger;
   const resolvedPromises = await Promise.all([
     Question.count(query_search).exec(),
     Question.find(query_search).find(query_userId)
@@ -172,6 +174,7 @@ module.exports.getUserDataByuserId = async (req, res) => {
       data: null,
     });
   }
+
   const user = await User.findById(req.params.userId)
   .lean()
   .populate({
@@ -185,38 +188,88 @@ module.exports.getUserDataByuserId = async (req, res) => {
       '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
   })
   .exec();
-  const questions = await Question.find( { asker: req.params.userId } )
-      .lean()
-      .populate({
-        path: 'asker',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .populate({
-        path: 'answers.answerer',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .exec();
-
-  if (!questions) {
-    return res
-      .status(404)
-      .json({ err: null, msg: 'Question not found.', data: null });
-  }
-
-    
   if (!user) {
     return res
       .status(404)
       .json({ err: null, msg: 'User not found.', data: null });
   }
+
+  let resolvedPromises = await Promise.all([
+    Question.count( { asker: req.params.userId } ).exec(),
+    Question.aggregate([
+      { 
+        $match: { 
+          "asker": ObjectId(req.params.userId) 
+        }
+      },
+      {
+        $project: {
+          "_id": 0,
+          "title": 1,
+          "tags": 1,
+          numberOfAnswers: { $cond: { if: { $isArray: "$answers" }, then: { $size: "$answers" }, else: 0} },
+          numberOfFollows: { $cond: { if: { $isArray: "$follows" }, then: { $size: "$follows" }, else: 0} }
+        }
+      }
+    ]) .exec(),
+  ]);
+  const total_questions = resolvedPromises[0];
+  const questions = resolvedPromises[1];
+
+  resolvedPromises = await Promise.all([
+    Question.count( {
+      "answers": {
+        "$elemMatch": {
+          "answerer": req.params.userId
+        }
+      }
+    } ).exec(),
+    Question.aggregate(
+      [
+        { 
+          $match: { 
+            "answers":{
+              "$elemMatch": {
+                "answerer": ObjectId(req.params.userId)
+              }
+            }   
+          }
+        },
+        { $unwind : "$answers" },
+        { 
+          $match: { 
+            "answers.answerer": ObjectId(req.params.userId)  
+          }
+        },
+        { $project : { 
+          content: "$answers.content",
+          credit: "$answers.credit",
+          "_id": 0,
+          "title": 1,
+          "tags": 1, 
+        }},
+        // {
+        //   $group: {
+        //     content: "$answers", 
+        //     credit: "$answers.credit"
+        //   }
+        // }
+      ]
+    )
+    .exec(),
+  ]);
+  const total_answers = resolvedPromises[0];
+  const answers = resolvedPromises[1];
+
   res.status(200).json({
     err: null,
-    msg: 'User retrieved successfully.',
+    msg: 'All information of this user retrieved successfully.',
     data: {
       user,
+      total_questions,
       questions,
+      total_answers,
+      answers,
     }
   });
 };
@@ -270,7 +323,6 @@ module.exports.getMyCredits = async (req, res) => {
       data: null,
     });
   }
-  const ObjectId = mongoose.Types.ObjectId;
   
   let question = await Question.aggregate(
     [
@@ -299,7 +351,6 @@ module.exports.getMyCredits = async (req, res) => {
     }
   }
   
-
   question = await Question.aggregate(
     [
       { 

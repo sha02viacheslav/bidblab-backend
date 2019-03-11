@@ -11,7 +11,6 @@ const commonCtrl = require('../controllers/common.controller');
 const router = express.Router();
 
 const isAuthenticated = (req, res, next) => {
-  debugger;
   const token = req.headers.authorization;
   if (!token) {
     return res.status(401).json({
