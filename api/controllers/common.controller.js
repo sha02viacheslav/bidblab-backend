@@ -497,10 +497,19 @@ module.exports.addQuestion = async (req, res) => {
     : req.decodedToken.user._id;
   result.value.credit = 5;
   let newQuestion = await Question.create(result.value);
-  if (!req.decodedToken.admin) {
-    newQuestion = newQuestion.toObject();
-    newQuestion.asker = req.decodedToken.user;
-  }
+  newQuestion = await Question.findById(newQuestion._id)
+    .lean()
+    .populate({
+      path: 'asker',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'answers.answerer',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
   res.status(201).json({
     err: null,
     msg: 'Question was added successfully.',
@@ -612,7 +621,18 @@ module.exports.changeQuestionPicture = async (req, res) => {
   if (question.questionPicture) {
     await fs.remove(path.resolve('./', question.questionPicture.path));
   }
-  const newQuestion = await Question.findById(question._id);
+  const newQuestion = await Question.findById(question._id).lean()
+    .populate({
+      path: 'asker',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'answers.answerer',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
 
   if(newQuestion && newQuestion.questionPicture){
     res.status(200).json({
