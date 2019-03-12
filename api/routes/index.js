@@ -204,6 +204,16 @@ router.get(
   errorHandler(commonCtrl.getQuestionsByAskerId),
 );
 router.get(
+  '/common/getQuestionsFollowing/',
+  isAuthenticated,
+  errorHandler(commonCtrl.getQuestionsFollowing),
+);
+router.get(
+  '/common/getUsersFollowing/',
+  isAuthenticated,
+  errorHandler(commonCtrl.getUsersFollowing),
+);
+router.get(
   '/common/getMyCredits/',
   isAuthenticated,
   errorHandler(commonCtrl.getMyCredits),
@@ -235,6 +245,11 @@ router.get(
   '/common/addFollow/:followType/:objectId',
   isAuthenticated,
   errorHandler(commonCtrl.addFollow),
+);
+router.get(
+  '/common/deleteFollow/:followType/:objectId',
+  isAuthenticated,
+  errorHandler(commonCtrl.deleteFollow),
 );
 
 router.get(

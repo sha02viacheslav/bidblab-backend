@@ -451,6 +451,95 @@ module.exports.getQuestionsWithYourAnswers = async (req, res) => {
     },
   });
 };
+module.exports.getQuestionsFollowing = async (req, res) => {
+  if (!Validations.isObjectId(req.decodedToken.user._id)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'UserId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  const query = {
+    "$or": [
+      {
+        "follows": {
+          "$elemMatch": {
+            "follower": req.decodedToken.user._id
+          }
+        }
+      }
+    ]
+  };
+  const projection = {
+    "title": 1,
+    "tag": 1,
+    "questionPicture": 1,
+  };
+
+  const resolvedPromises = await Promise.all([
+    Question.count(query).exec(),
+    Question.find(query, projection)
+      .lean()
+      .exec(),
+  ]);
+  const count = resolvedPromises[0];
+  //improve in the future.
+  const questions = resolvedPromises[1];
+ 
+  res.status(200).json({
+    err: null,
+    msg: 'Following quesftions retrieved successfully.',
+    data: {
+      count,
+      questions,
+    },
+  });
+};
+module.exports.getUsersFollowing = async (req, res) => {
+  if (!Validations.isObjectId(req.decodedToken.user._id)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'UserId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  const query = {
+    "$or": [
+      {
+        "follows": {
+          "$elemMatch": {
+            "follower": req.decodedToken.user._id
+          }
+        }
+      }
+    ]
+  };
+  const projection = {
+    "username": 1,
+    "physicaladdress": 1,
+    "physicalstate": 1,
+    "profilePicture": 1,
+  };
+
+  const resolvedPromises = await Promise.all([
+    User.count(query).exec(),
+    User.find(query, projection)
+      .lean()
+      .exec(),
+  ]);
+  const count = resolvedPromises[0];
+  //improve in the future.
+  const users = resolvedPromises[1];
+ 
+  res.status(200).json({
+    err: null,
+    msg: 'Following users retrieved successfully.',
+    data: {
+      count,
+      users,
+    },
+  });
+};
 
 module.exports.addQuestion = async (req, res) => {
   const schema = joi
@@ -766,6 +855,74 @@ module.exports.addFollow = async (req, res) => {
       err: null,
       msg: 'Follow was added successfully.',
       data: newQuestion,
+    });
+  }
+  else{
+    return res.status(422).json({
+      err: null,
+      msg: 'Follow type parameter must be a valid.',
+      data: null,
+    });
+  }
+}
+
+module.exports.deleteFollow = async (req, res) => {
+  if (!Validations.isObjectId(req.params.objectId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'Id parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+
+  if(req.params.followType == 'user'){
+    const user = await User.findById(req.params.objectId).exec();
+    if (!user) {
+      return res
+        .status(404)
+        .json({ err: null, msg: 'User not found.', data: null });
+    }
+
+    const follow = user.follows.find(
+      follow => follow.follower == req.decodedToken.user._id,
+    );
+    if (!follow) {
+      return res
+        .status(404)
+        .json({ err: null, msg: 'Follow not found.', data: null });
+    }
+    follow.remove();
+    await user.save();
+
+    res.status(200).json({
+      err: null,
+      msg: 'Follow was deleted successfully.',
+      data: user,
+    });
+  }
+  else if(req.params.followType == 'question'){
+    const question = await Question.findById(req.params.objectId).exec();
+    if (!question) {
+      return res
+        .status(404)
+        .json({ err: null, msg: 'Question not found.', data: null });
+    }
+
+    const follow = question.follows.find(
+      follow => follow.follower == req.decodedToken.user._id,
+    );
+    if (!follow) {
+      return res
+        .status(404)
+        .json({ err: null, msg: 'Follow not found.', data: null });
+    }
+    follow.remove();
+    await question.save();
+
+    res.status(200).json({
+      err: null,
+      msg: 'Follow was deleted successfully.',
+      data: question,
     });
   }
   else{
