@@ -9,6 +9,7 @@ const path = require('path');
 
 const Question = mongoose.model('Question');
 const User = mongoose.model('User');
+const Report = mongoose.model('Report');
 
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -1069,5 +1070,90 @@ module.exports.addThumb = async (req, res) => {
     err: null,
     msg: 'Thumb was added successfully.',
     data: newQuestion,
+  });
+}
+
+module.exports.addReport = async (req, res) => {
+  if (!Validations.isObjectId(req.params.questionId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'questionId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  if (!Validations.isObjectId(req.params.answerId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'answerId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+
+  const schema = joi
+    .object({
+      reportType: joi
+        .string()
+        .trim()
+        .max(20)
+        .required(),
+      reportNote: joi
+        .string()
+        .trim()
+        .max(50)
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+
+  let report = await Report.findOne({
+      questionId: req.params.questionId,
+      answerId: req.params.answerId,
+      reporter: req.decodedToken.user._id,
+    })
+  .lean()
+  .exec();
+  if (report) {
+    if(report.reportType == req.params.reportType && report.reportNote == req.params.reportNote){
+      return res.status(403).json({
+        err: null,
+        msg: 'Report already exists, try a different format or rephrasing.',
+        data: null,
+      });
+    }
+    else{
+      report.reportType = req.params.reportType;
+      report.reportNote = req.params.reportNote;
+      report.updatedAt = moment().toDate();
+      await report.save();
+    }
+  }
+  else{
+    result.value.questionId = req.params.questionId;
+    result.value.answerId = req.params.answerId;
+    result.value.reporter = req.decodedToken.user._id;
+    result.value.updatedAt = moment().toDate();
+    report = await Report.create(result.value);
+  }
+  newReport = await Report.findById(report._id)
+    .lean()
+    .exec(); 
+  if (!newReport) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Report was not add.', data: null });
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Report was added successfully.',
+    data: newReport,
   });
 }

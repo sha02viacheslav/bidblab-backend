@@ -233,7 +233,6 @@ router.post(
   isAuthenticated,
   errorHandler(commonCtrl.addAnswer),
 );
-
 router.patch(
   '/common/changeQuestionPicture',
   isAuthenticated,
@@ -251,11 +250,15 @@ router.get(
   isAuthenticated,
   errorHandler(commonCtrl.deleteFollow),
 );
-
 router.get(
   '/common/addThumb/:questionId/:answerId/:thumbType',
   isAuthenticated,
   errorHandler(commonCtrl.addThumb),
+);
+router.post(
+  '/common/addReport/:questionId/:answerId',
+  isAuthenticated,
+  errorHandler(commonCtrl.addReport),
 );
 
 // -----------------------------------File-------------------------------------

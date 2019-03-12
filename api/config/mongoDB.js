@@ -77,3 +77,4 @@ mongoose
 require('../models/user.model');
 require('../models/admin.model');
 require('../models/question.model');
+require('../models/report.model');
