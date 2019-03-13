@@ -154,16 +154,51 @@ module.exports.getQuestion = async (req, res) => {
         '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
     })
     .exec();
-    
   if (!question) {
     return res
       .status(404)
       .json({ err: null, msg: 'Question not found.', data: null });
-  }
+  }  
+  const reports = await Question.aggregate(
+    [
+      { 
+        $match: { 
+          "_id": ObjectId(req.params.questionId) 
+        }
+      },
+       { $unwind : "$answers" },
+      { 
+        $project : { 
+          answerId:"$answers._id",
+          "_id": 0,
+        }
+      },
+      {
+        $lookup:{
+          from: "reports",
+          localField: "answerId",
+          foreignField: "answerId",
+          as: "reports"
+        }
+      },
+      { $unwind : "$reports" },
+      { 
+        $project : { 
+          answerId: 1,
+         // "_id": 0,
+          reporter: "$reports.reporter",
+        }
+      },
+    ]
+  )
+  .exec();
   res.status(200).json({
     err: null,
     msg: 'Question retrieved successfully.',
-    data: question,
+    data: {
+      question,
+      reports,
+    }
   });
 };
 
