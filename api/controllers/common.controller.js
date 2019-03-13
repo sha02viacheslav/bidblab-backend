@@ -10,6 +10,7 @@ const path = require('path');
 const Question = mongoose.model('Question');
 const User = mongoose.model('User');
 const Report = mongoose.model('Report');
+const Interest = mongoose.model('Interest');
 
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -1190,5 +1191,32 @@ module.exports.addReport = async (req, res) => {
     err: null,
     msg: 'Report was added successfully.',
     data: newReport,
+  });
+}
+
+
+module.exports.getStandardInterests  = async (req, res) => {
+  const standardInterests = await Interest.aggregate(
+    [
+      {
+        $group:
+          {
+            _id: null,
+            interests: { $addToSet: "$interestName" }
+          }
+      }
+    ]
+  )
+  .exec();
+  if (!standardInterests) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'StandardInterests was not found.', data: null });
+  }
+
+  res.status(200).json({
+    err: null,
+    msg: 'StandardInterests was found successfully.',
+    data: standardInterests[0].interests,
   });
 }

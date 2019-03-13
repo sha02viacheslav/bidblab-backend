@@ -261,6 +261,10 @@ router.post(
   isAuthenticated,
   errorHandler(commonCtrl.addReport),
 );
+router.get(
+  '/common/getStandardInterests',
+  errorHandler(commonCtrl.getStandardInterests),
+);
 
 // -----------------------------------File-------------------------------------
 router.get(
