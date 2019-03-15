@@ -134,7 +134,7 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
   });
 };
 
-module.exports.getQuestion = async (req, res) => {
+module.exports.getQuestionByQuestionId = async (req, res) => {
   if (!Validations.isObjectId(req.params.questionId)) {
     return res.status(422).json({
       err: null,

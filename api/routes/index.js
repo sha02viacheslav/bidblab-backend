@@ -191,9 +191,9 @@ router.get(
   isAuthenticated,
   errorHandler(commonCtrl.getQuestionsCanAnswer));
 router.get(
-  '/common/getQuestion/:questionId',
+  '/common/getQuestionByQuestionId/:questionId',
   isAuthenticated,
-  errorHandler(commonCtrl.getQuestion),
+  errorHandler(commonCtrl.getQuestionByQuestionId),
 );
 router.get(
   '/common/getUserDataByuserId/:userId',
