@@ -224,12 +224,30 @@ module.exports.getUserDataByuserId = async (req, res) => {
       .json({ err: null, msg: 'User not found.', data: null });
   }
 
+  res.status(200).json({
+    err: null,
+    msg: 'All information of this user retrieved successfully.',
+    data: {
+      user,
+    }
+  });
+};
+
+module.exports.getUserQuestionByuserId = async (req, res) => {
+  if (!Validations.isObjectId(req.params.userId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'userId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+
   let resolvedPromises = await Promise.all([
     Question.count( { asker: req.params.userId } ).exec(),
     Question.aggregate([
       { 
         $match: { 
-          "asker": ObjectId(req.params.userId) 
+          "asker": ObjectId(req.params.userId), 
         }
       },
       {
@@ -246,29 +264,67 @@ module.exports.getUserDataByuserId = async (req, res) => {
   const total_questions = resolvedPromises[0];
   const questions = resolvedPromises[1];
 
-  resolvedPromises = await Promise.all([
+  res.status(200).json({
+    err: null,
+    msg: 'All information of this user retrieved successfully.',
+    data: {
+      total_questions,
+      questions,
+    }
+  });
+};
+
+module.exports.getUserAnswerByuserId = async (req, res) => {
+  debugger
+  if (!Validations.isObjectId(req.query.userId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'userId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  if(req.query.interestFilter){
+    const interestFilterFlag = true;
+  }
+  else{
+    const interestFilterFlag = false;
+  }
+  let interestArray = req.query.interestFilter.replace(/^\[|\]$/g, "").split(",");
+  const resolvedPromises = await Promise.all([
     Question.count( {
       "answers": {
         "$elemMatch": {
-          "answerer": req.params.userId
+          "answerer": req.query.userId
         }
-      }
+      },
+      "tag": { "$exists": true }   
     } ).exec(),
+    
     Question.aggregate(
       [
         { 
           $match: { 
             "answers":{
               "$elemMatch": {
-                "answerer": ObjectId(req.params.userId)
+                "answerer": ObjectId(req.query.userId)
               }
-            }   
+            },
+            $or: [ 
+              {
+                "tag": { "$in": interestArray }
+              },
+              //////
+              {
+                "tag": { "$exists": interestFilterFlag }   
+              }
+            ]
           }
         },
+        
         { $unwind : "$answers" },
         { 
           $match: { 
-            "answers.answerer": ObjectId(req.params.userId)  
+            "answers.answerer": ObjectId(req.query.userId)  
           }
         },
         { $project : { 
@@ -289,9 +345,6 @@ module.exports.getUserDataByuserId = async (req, res) => {
     err: null,
     msg: 'All information of this user retrieved successfully.',
     data: {
-      user,
-      total_questions,
-      questions,
       total_answers,
       answers,
     }

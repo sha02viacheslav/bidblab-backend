@@ -200,6 +200,14 @@ router.get(
   errorHandler(commonCtrl.getUserDataByuserId),
 );
 router.get(
+  '/common/getUserQuestionByuserId/:userId',
+  errorHandler(commonCtrl.getUserQuestionByuserId),
+);
+router.get(
+  '/common/getUserAnswerByuserId',
+  errorHandler(commonCtrl.getUserAnswerByuserId),
+);
+router.get(
   '/common/getQuestionsByAskerId/',
   isAuthenticated,
   errorHandler(commonCtrl.getQuestionsByAskerId),
