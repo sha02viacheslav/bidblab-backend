@@ -1127,28 +1127,102 @@ module.exports.addThumb = async (req, res) => {
   await question.save();
 
   const newQuestion = await Question.findById(req.params.questionId)
-      .lean()
-      .populate({
-        path: 'asker',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .populate({
-        path: 'answers.answerer',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .populate({
-        path: 'follows.follower',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .populate({
-        path: 'answers.thumbs.thumber',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .exec();
+    .lean()
+    .populate({
+      path: 'asker',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'answers.answerer',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'follows.follower',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'answers.thumbs.thumber',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
+  // const newQuestion = await Question.aggregate(
+  //   [
+  //     { 
+  //       $match: { 
+  //         "_id": ObjectId(req.params.questionId),          
+  //       }
+  //     },
+  //     { $unwind : "$answers" },
+  //     {
+  //       $lookup:{
+  //         from: "users",
+  //         localField: "answers.answerer",
+  //         foreignField: "_id",
+  //         as: "answers.answerer"
+  //       }
+  //     },
+  //     { 
+  //       $project : { 
+  //         "title": 1,
+  //         "asker": 1,
+  //         "follows": 1,
+  //         "answers": 1, 
+  //         "answers.answerer": {$arrayElemAt: [ "answers.answerer", 0 ]},
+  //       } 
+  //     },
+      
+  //     {
+  //       $sort : {"answers.thumbupcnt": 1}
+  //     },
+  //     {
+  //       $lookup:{
+  //         from: "users",
+  //         localField: "asker",
+  //         foreignField: "_id",
+  //         as: "asker"
+  //       }
+  //     },
+  //     {
+  //       $project: {
+  //         "asker.password": 0,
+  //         "asker.verified": 0,
+  //         "asker.resetPasswordToken": 0,
+  //         "asker.resetPasswordTokenExpiry": 0,
+  //         "asker.verificationToken": 0,
+  //         "asker.verificationTokenExpiry": 0,
+  //       }
+  //     },
+  //     { 
+  //       $group: {
+  //         _id: "$_id",
+  //         title: { "$first": "$title" },
+  //         tag: { "$first": "$tag" },
+  //         asker: { "$first": {$arrayElemAt: [ "$asker", 0 ]} },
+  //         follows: { "$first": "$follows" },
+  //         answers: { "$push": "$answers" }
+  //       }
+  //     }
+  //   ])
+    // .populate({
+    //   path: 'answers.answerer',
+    //   select:
+    //     '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    // })
+    // .populate({
+    //   path: 'follows.follower',
+    //   select:
+    //     '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    // })
+    // .populate({
+    //   path: 'answers.thumbs.thumber',
+    //   select:
+    //     '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    // })
+    // .exec();
 
   if (!newQuestion) {
     return res

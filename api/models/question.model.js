@@ -40,15 +40,19 @@ const answerSchema = mongoose.Schema({
   },
   thumbupcnt: {
     type: Number,
+    default: 0
   },
   thumbdowncnt: {
     type: Number,
+    default: 0
   },
   credit: {
     type: Number,
+    default: 0
   },
   answertype: {
     type: Number,
+    default: 0
   },
   thumbs: [thumbSchema],
   createdAt: {
@@ -77,6 +81,7 @@ const questionSchema = mongoose.Schema({
   },
   credit: {
     type: Number,
+    default: 0
   },
   createdAt: {
     type: Date,
