@@ -234,7 +234,7 @@ module.exports.getUserDataByuserId = async (req, res) => {
 };
 
 module.exports.getUserQuestionByuserId = async (req, res) => {
-  if (!Validations.isObjectId(req.params.userId)) {
+  if (!Validations.isObjectId(req.query.userId)) {
     return res.status(422).json({
       err: null,
       msg: 'userId parameter must be a valid ObjectId.',
@@ -242,13 +242,54 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
     });
   }
 
+  let interestFilterFlag = true;
+  if(req.query.interestFilter){
+    interestFilterFlag = false;
+  }
+  let interestArray = req.query.interestFilter.replace(/^\[|\]$/g, "").split(",");
   let resolvedPromises = await Promise.all([
-    Question.count( { asker: req.params.userId } ).exec(),
+    Question.count( { 
+      asker: req.query.userId,
+      $or: [ 
+        {
+          "tag": { "$in": interestArray }
+        },
+        {
+          "tag": { "$exists": interestFilterFlag }   
+        }
+      ] 
+    } ).exec(),
     Question.aggregate([
       { 
         $match: { 
-          "asker": ObjectId(req.params.userId), 
+          "asker": ObjectId(req.query.userId), 
+        },
+      },
+      {
+        $group: {
+          _id: "$tag",
         }
+      },
+      {
+        $group: {
+          _id: "null",
+          tags: { "$push": "$_id" }
+        }
+      }
+    ]) .exec(),
+    Question.aggregate([
+      { 
+        $match: { 
+          "asker": ObjectId(req.query.userId), 
+          $or: [ 
+            {
+              "tag": { "$in": interestArray }
+            },
+            {
+              "tag": { "$exists": interestFilterFlag }   
+            }
+          ] 
+        },
       },
       {
         $project: {
@@ -262,14 +303,16 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
     ]) .exec(),
   ]);
   const total_questions = resolvedPromises[0];
-  const questions = resolvedPromises[1];
+  const questionTags = resolvedPromises[1][0].tags;
+  const questions = resolvedPromises[2];
 
   res.status(200).json({
     err: null,
-    msg: 'All information of this user retrieved successfully.',
+    msg: 'All questiond of this user retrieved successfully.',
     data: {
       total_questions,
       questions,
+      questionTags
     }
   });
 };
