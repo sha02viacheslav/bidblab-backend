@@ -275,7 +275,6 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
 };
 
 module.exports.getUserAnswerByuserId = async (req, res) => {
-  debugger
   if (!Validations.isObjectId(req.query.userId)) {
     return res.status(422).json({
       err: null,
@@ -283,11 +282,10 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
       data: null,
     });
   }
+
+  let interestFilterFlag = true;
   if(req.query.interestFilter){
-    const interestFilterFlag = true;
-  }
-  else{
-    const interestFilterFlag = false;
+    interestFilterFlag = false;
   }
   let interestArray = req.query.interestFilter.replace(/^\[|\]$/g, "").split(",");
   const resolvedPromises = await Promise.all([
@@ -297,9 +295,40 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
           "answerer": req.query.userId
         }
       },
-      "tag": { "$exists": true }   
+      $or: [ 
+        {
+          "tag": { "$in": interestArray }
+        },
+        {
+          "tag": { "$exists": interestFilterFlag }   
+        }
+      ]
     } ).exec(),
-    
+    Question.aggregate(
+      [
+        { 
+          $match: { 
+            "answers":  {
+              "$elemMatch": {
+                "answerer": ObjectId(req.query.userId)
+              }
+            }
+          }
+        },
+        {
+          $group: {
+            _id: "$tag",
+          }
+        },
+        {
+          $group: {
+            _id: "null",
+            tags: { "$push": "$_id" }
+          }
+        }
+      ]
+    )
+    .exec(),
     Question.aggregate(
       [
         { 
@@ -313,14 +342,12 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
               {
                 "tag": { "$in": interestArray }
               },
-              //////
               {
                 "tag": { "$exists": interestFilterFlag }   
               }
             ]
           }
         },
-        
         { $unwind : "$answers" },
         { 
           $match: { 
@@ -339,13 +366,15 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
     .exec(),
   ]);
   const total_answers = resolvedPromises[0];
-  const answers = resolvedPromises[1];
+  const answerTags = resolvedPromises[1][0].tags;
+  const answers = resolvedPromises[2];
 
   res.status(200).json({
     err: null,
-    msg: 'All information of this user retrieved successfully.',
+    msg: 'All answers of this user retrieved successfully.',
     data: {
       total_answers,
+      answerTags,
       answers,
     }
   });
