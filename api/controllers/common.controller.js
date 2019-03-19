@@ -15,6 +15,14 @@ const Interest = mongoose.model('Interest');
 
 const ObjectId = mongoose.Types.ObjectId;
 
+const removeProfileOfPrivate = (question) => {
+  question.answers.forEach(element => {
+    if(element.answertype == 'public'){
+      element.answerer = null;
+    }
+  });
+};
+
 module.exports.getQuestions = async (req, res) => {
   const { offset = 0, limit = 20, search } = req.query;
   const query = search
@@ -155,6 +163,10 @@ module.exports.getQuestionByQuestionId = async (req, res) => {
         '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
     })
     .exec();
+  
+  //await question.save();
+  removeProfileOfPrivate(question);
+
   if (!question) {
     return res
       .status(404)
@@ -229,6 +241,115 @@ module.exports.getUserDataByuserId = async (req, res) => {
     msg: 'All information of this user retrieved successfully.',
     data: {
       user,
+    }
+  });
+};
+
+module.exports.getUserAnswerByuserId = async (req, res) => {
+  if (!Validations.isObjectId(req.query.userId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'userId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+
+  let interestFilterFlag = true;
+  if(req.query.interestFilter){
+    interestFilterFlag = false;
+  }
+  let interestArray = req.query.interestFilter.replace(/^\[|\]$/g, "").split(",");
+  const resolvedPromises = await Promise.all([
+    Question.count( {
+      "answers": {
+        "$elemMatch": {
+          "answerer": req.query.userId,
+          "answertype": "public",
+        }
+      },
+      $or: [ 
+        {
+          "tag": { "$in": interestArray }
+        },
+        {
+          "tag": { "$exists": interestFilterFlag }   
+        }
+      ]
+    } ).exec(),
+    Question.aggregate(
+      [
+        { 
+          $match: { 
+            "answers":  {
+              "$elemMatch": {
+                "answerer": ObjectId(req.query.userId),
+                "answertype": "public",
+              }
+            }
+          }
+        },
+        {
+          $group: {
+            _id: "$tag",
+          }
+        },
+        {
+          $group: {
+            _id: "null",
+            tags: { "$push": "$_id" }
+          }
+        }
+      ]
+    )
+    .exec(),
+    Question.aggregate(
+      [
+        { 
+          $match: { 
+            "answers":{
+              "$elemMatch": {
+                "answerer": ObjectId(req.query.userId),
+                "answertype": "public",
+              }
+            },
+            $or: [ 
+              {
+                "tag": { "$in": interestArray }
+              },
+              {
+                "tag": { "$exists": interestFilterFlag }   
+              }
+            ]
+          }
+        },
+        { $unwind : "$answers" },
+        { 
+          $match: { 
+            "answers.answerer": ObjectId(req.query.userId)  
+          }
+        },
+        { $project : { 
+          content: "$answers.content",
+          credit: "$answers.credit",
+          "_id": 0,
+          "title": 1,
+          "tag": 1, 
+        }},
+      ]
+    )
+    .exec(),
+  ]);
+  const total_answers = resolvedPromises[0];
+  const answerTags = resolvedPromises[1][0].tags;
+  const answers = resolvedPromises[2];
+
+  res.status(200).json({
+    err: null,
+    msg: 'All answers of this user retrieved successfully.',
+    data: {
+      total_answers,
+      answerTags,
+      answers,
     }
   });
 };
@@ -313,112 +434,6 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
       total_questions,
       questions,
       questionTags
-    }
-  });
-};
-
-module.exports.getUserAnswerByuserId = async (req, res) => {
-  if (!Validations.isObjectId(req.query.userId)) {
-    return res.status(422).json({
-      err: null,
-      msg: 'userId parameter must be a valid ObjectId.',
-      data: null,
-    });
-  }
-
-  let interestFilterFlag = true;
-  if(req.query.interestFilter){
-    interestFilterFlag = false;
-  }
-  let interestArray = req.query.interestFilter.replace(/^\[|\]$/g, "").split(",");
-  const resolvedPromises = await Promise.all([
-    Question.count( {
-      "answers": {
-        "$elemMatch": {
-          "answerer": req.query.userId
-        }
-      },
-      $or: [ 
-        {
-          "tag": { "$in": interestArray }
-        },
-        {
-          "tag": { "$exists": interestFilterFlag }   
-        }
-      ]
-    } ).exec(),
-    Question.aggregate(
-      [
-        { 
-          $match: { 
-            "answers":  {
-              "$elemMatch": {
-                "answerer": ObjectId(req.query.userId)
-              }
-            }
-          }
-        },
-        {
-          $group: {
-            _id: "$tag",
-          }
-        },
-        {
-          $group: {
-            _id: "null",
-            tags: { "$push": "$_id" }
-          }
-        }
-      ]
-    )
-    .exec(),
-    Question.aggregate(
-      [
-        { 
-          $match: { 
-            "answers":{
-              "$elemMatch": {
-                "answerer": ObjectId(req.query.userId)
-              }
-            },
-            $or: [ 
-              {
-                "tag": { "$in": interestArray }
-              },
-              {
-                "tag": { "$exists": interestFilterFlag }   
-              }
-            ]
-          }
-        },
-        { $unwind : "$answers" },
-        { 
-          $match: { 
-            "answers.answerer": ObjectId(req.query.userId)  
-          }
-        },
-        { $project : { 
-          content: "$answers.content",
-          credit: "$answers.credit",
-          "_id": 0,
-          "title": 1,
-          "tag": 1, 
-        }},
-      ]
-    )
-    .exec(),
-  ]);
-  const total_answers = resolvedPromises[0];
-  const answerTags = resolvedPromises[1][0].tags;
-  const answers = resolvedPromises[2];
-
-  res.status(200).json({
-    err: null,
-    msg: 'All answers of this user retrieved successfully.',
-    data: {
-      total_answers,
-      answerTags,
-      answers,
     }
   });
 };
@@ -822,7 +837,7 @@ module.exports.addAnswer = async (req, res) => {
     ? null
     : req.decodedToken.user._id;
   result.value.answertype = req.params.answertype;
-  result.value.credit = result.value.answertype == 1
+  result.value.credit = result.value.answertype == 'public'
     ? 8
     : 4;
   let answer = question.answers.create(result.value);
@@ -1194,9 +1209,9 @@ module.exports.addThumb = async (req, res) => {
   if(answer.thumbdowncnt < 0){
     answer.thumbdowncnt = 0;
   }
-
-  await answer.save();
+  
   await question.save();
+
 
   const newQuestion = await Question.findById(req.params.questionId)
     .lean()
@@ -1221,80 +1236,9 @@ module.exports.addThumb = async (req, res) => {
         '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
     })
     .exec();
-  // const newQuestion = await Question.aggregate(
-  //   [
-  //     { 
-  //       $match: { 
-  //         "_id": ObjectId(req.params.questionId),          
-  //       }
-  //     },
-  //     { $unwind : "$answers" },
-  //     {
-  //       $lookup:{
-  //         from: "users",
-  //         localField: "answers.answerer",
-  //         foreignField: "_id",
-  //         as: "answers.answerer"
-  //       }
-  //     },
-  //     { 
-  //       $project : { 
-  //         "title": 1,
-  //         "asker": 1,
-  //         "follows": 1,
-  //         "answers": 1, 
-  //         "answers.answerer": {$arrayElemAt: [ "answers.answerer", 0 ]},
-  //       } 
-  //     },
-      
-  //     {
-  //       $sort : {"answers.thumbupcnt": 1}
-  //     },
-  //     {
-  //       $lookup:{
-  //         from: "users",
-  //         localField: "asker",
-  //         foreignField: "_id",
-  //         as: "asker"
-  //       }
-  //     },
-  //     {
-  //       $project: {
-  //         "asker.password": 0,
-  //         "asker.verified": 0,
-  //         "asker.resetPasswordToken": 0,
-  //         "asker.resetPasswordTokenExpiry": 0,
-  //         "asker.verificationToken": 0,
-  //         "asker.verificationTokenExpiry": 0,
-  //       }
-  //     },
-  //     { 
-  //       $group: {
-  //         _id: "$_id",
-  //         title: { "$first": "$title" },
-  //         tag: { "$first": "$tag" },
-  //         asker: { "$first": {$arrayElemAt: [ "$asker", 0 ]} },
-  //         follows: { "$first": "$follows" },
-  //         answers: { "$push": "$answers" }
-  //       }
-  //     }
-  //   ])
-    // .populate({
-    //   path: 'answers.answerer',
-    //   select:
-    //     '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-    // })
-    // .populate({
-    //   path: 'follows.follower',
-    //   select:
-    //     '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-    // })
-    // .populate({
-    //   path: 'answers.thumbs.thumber',
-    //   select:
-    //     '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-    // })
-    // .exec();
+
+    removeProfileOfPrivate(newQuestion);
+  
 
   if (!newQuestion) {
     return res

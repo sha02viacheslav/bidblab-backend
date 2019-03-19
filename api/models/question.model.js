@@ -51,8 +51,8 @@ const answerSchema = mongoose.Schema({
     default: 0
   },
   answertype: {
-    type: Number,
-    default: 0
+    type: String,
+    default: 'private'
   },
   thumbs: [thumbSchema],
   createdAt: {
