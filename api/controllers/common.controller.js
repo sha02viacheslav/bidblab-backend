@@ -17,14 +17,14 @@ const ObjectId = mongoose.Types.ObjectId;
 
 const removeProfileOfPrivate = (question) => {
   question.answers.forEach(element => {
-    if(element.answertype == 'public'){
+    if(element.answertype == 'private'){
       element.answerer = null;
     }
   });
 };
 
 module.exports.getQuestions = async (req, res) => {
-  const { offset = 0, limit = 20, search } = req.query;
+  const { offset = 0, limit = 10, search } = req.query;
   const query = search
     ? {
       $or: [
@@ -34,21 +34,25 @@ module.exports.getQuestions = async (req, res) => {
             $options: 'i',
           },
         },
-        {
-          tag: {
-            $regex: search,
-            $options: 'i',
-          },
-        },
+        // {
+        //   tag: {
+        //     $regex: search,
+        //     $options: 'i',
+        //   },
+        // },
       ],
     }
     : {};
+
+  const start = Number(limit) * Number(offset);
+  const size = Number(limit);
+
   const resolvedPromises = await Promise.all([
     Question.count(query).exec(),
     Question.find(query)
       .lean()
-      .skip(+offset)
-      .limit(+limit)
+      .skip(start)
+      .limit(size)
       .populate({
         path: 'asker',
         select:
@@ -60,9 +64,33 @@ module.exports.getQuestions = async (req, res) => {
           '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
       })
       .exec(),
+      
   ]);
+
   const count = resolvedPromises[0];
   const questions = resolvedPromises[1];
+
+  questions.forEach(question => {
+    question.answers.sort((a,b) => {
+      const a_thumbupcnt = a.thumbupcnt? a.thumbupcnt : 0;
+      const b_thumbupcnt = b.thumbupcnt? b.thumbupcnt : 0;
+      const a_thumbdowncnt = a.thumbdowncnt? a.thumbdowncnt : 0;
+      const b_thumbdowncnt = b.thumbdowncnt? b.thumbdowncnt : 0;
+      const temp1 = a_thumbupcnt - a_thumbdowncnt;
+      const temp2 = b_thumbupcnt - b_thumbdowncnt;
+      return temp2 - temp1;
+    }),
+    question.answers.forEach(function(item, index) {
+      if(index != 0){
+        // console.log(index);
+        // debugger;
+        // item.remove();
+      }
+    })
+    removeProfileOfPrivate(question);
+  });
+
+
   res.status(200).json({
     err: null,
     msg: 'Questions retrieved successfully.',
@@ -198,7 +226,6 @@ module.exports.getQuestionByQuestionId = async (req, res) => {
       { 
         $project : { 
           answerId: 1,
-         // "_id": 0,
           reporter: "$reports.reporter",
         }
       },
