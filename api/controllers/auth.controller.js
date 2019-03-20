@@ -108,7 +108,7 @@ const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60
 
 const data = {
 	from: 'Bidblab <support@bidblab.com>',
-	to: 'webmaster0429@gmail.com',
+	to: newUser.email,
 	subject: 'Account Verification',
   html: `<p>Hello ${
     newUser.username
