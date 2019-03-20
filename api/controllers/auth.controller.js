@@ -22,6 +22,8 @@ module.exports.signup = async (req, res) => {
         .string()
         .trim()
         .required(),
+      birthday: joi
+        .date(),
       username: joi
         .string()
         .trim()

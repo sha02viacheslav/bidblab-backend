@@ -76,8 +76,6 @@ const userSchema = mongoose.Schema({
   shippingzipcode: {
     type: String,
   },
-
-
   password: {
     type: String,
     required: true,
