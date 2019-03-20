@@ -109,7 +109,7 @@ const data = {
     newUser.username
   }, please click on the following link to verify your account: <a href="${
     config.FRONTEND_URI
-  }/#/verifyAccount/${result.value.verificationToken}">Verify</a></p>`,
+  }/gateway/verifyAccount/${result.value.verificationToken}">Verify</a></p>`,
 };
 mg.messages().send(data, function (error, body) {
 	console.log(body);
@@ -264,7 +264,6 @@ module.exports.verifyAccount = async (req, res) => {
       $gt: moment().toDate(),
     },
   }).exec();
-  debugger;
   if (!user) {
     return res.status(422).json({
       err: null,
@@ -277,10 +276,21 @@ module.exports.verifyAccount = async (req, res) => {
   user.verificationTokenExpiry = undefined;
   user.verified = true;
   await user.save();
+
+  const token = jwt.sign(
+    {
+      user: user.toObject(),
+    },
+    config.SECRET,
+    {
+      expiresIn: '24h',
+    },
+  );
+
   res.status(200).json({
     err: null,
-    msg: 'Account was verified successfully.',
-    data: null,
+    msg: `Welcome, ${user.username}.`,
+    data: token,
   });
 };
 
