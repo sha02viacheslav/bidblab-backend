@@ -84,16 +84,55 @@ module.exports.signup = async (req, res) => {
     .toDate();
   const newUser = await User.create(result.value);
   
-  await nodemailer.sendMail({
-    from: config.MAILER.from,
-    to: newUser.email,
-    subject: 'Account Verification',
-    html: `<p>Hello ${
-      newUser.username
-    }, please click on the following link to verify your account: <a href="${
-      config.FRONTEND_URI
-    }/#/verifyAccount/${result.value.verificationToken}">Verify</a></p>`,
-  });
+  // await nodemailer.sendMail({
+  //   from: config.MAILER.from,
+  //   to: newUser.email,
+  //   subject: 'Account Verification',
+  //   html: `<p>Hello ${
+  //     newUser.username
+  //   }, please click on the following link to verify your account: <a href="${
+  //     config.FRONTEND_URI
+  //   }/#/verifyAccount/${result.value.verificationToken}">Verify</a></p>`,
+  // });
+
+
+  const mailgun = require("mailgun-js");
+const DOMAIN = 'sandbox9a8adc4ce55f49f0b77eb0b22c554c10.mailgun.org';
+const mg = new mailgun({apiKey: '4ec4f2bb04b25807208f073fd21e9511-985b58f4-83a89e91', domain: DOMAIN});
+
+
+const data = {
+	from: 'webmaster0429@gmail.com',
+	to: 'webmaster0429@gmail.com',
+	subject: 'Account Verification',
+  html: `<p>Hello ${
+    newUser.username
+  }, please click on the following link to verify your account: <a href="${
+    config.FRONTEND_URI
+  }/#/verifyAccount/${result.value.verificationToken}">Verify</a></p>`,
+};
+mg.messages().send(data, function (error, body) {
+	console.log(body);
+});
+
+
+  // nodemailer.sendMail({
+  //   from: config.MAILER.from,
+  //   to: req.body.email,
+  //   subject: 'Account Verification',
+  //   html: `<p>Hello ${
+  //     newUser.username
+  //   }, please click on the following link to verify your account: <a href="${
+  //     config.FRONTEND_URI
+  //   }/#/verifyAccount/${result.value.verificationToken}">Verify</a></p>`,
+  // }, function (err, info) {
+  //   if (err) {
+  //     console.log('Error: ' + err);
+  //   }
+  //   else {
+  //     console.log('Response: ' + info);
+  //   }
+  // });
  
   res.status(201).json({
     err: null,
@@ -131,6 +170,11 @@ module.exports.userLogin = async (req, res) => {
     return res
       .status(404)
       .json({ err: null, msg: 'Account not found.', data: null });
+  }
+  if (!user.verified) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'Account not verified.', data: null });
   }
   const passwordMatches = await Encryption.comparePasswordToHash(
     result.value.password,
@@ -220,6 +264,7 @@ module.exports.verifyAccount = async (req, res) => {
       $gt: moment().toDate(),
     },
   }).exec();
+  debugger;
   if (!user) {
     return res.status(422).json({
       err: null,
@@ -285,6 +330,9 @@ module.exports.forgotPassword = async (req, res) => {
       user.resetPasswordToken
     }">Reset</a><br> If you did not make the request, then ignore this email, your account will be safe.</p>`,
   });
+  
+  
+
   res.status(200).json({
     err: null,
     msg:
