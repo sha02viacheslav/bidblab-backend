@@ -625,6 +625,8 @@ module.exports.getQuestionsWithYourAnswers = async (req, res) => {
         "answerer": req.decodedToken.user._id
       }
     },
+    "title": 1,
+    "asker": 1,
   };
   const resolvedPromises = await Promise.all([
     Question.count(query).exec(),
