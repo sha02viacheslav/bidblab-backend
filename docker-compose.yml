@@ -3,7 +3,7 @@ services:
   app:
     image: omardoma/bidblab-backend:v1
     ports:
-      - "3000:3000"
+      - "3200:3200"
     volumes:
       - .:/app
       - /app/node_modules

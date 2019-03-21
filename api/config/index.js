@@ -4,6 +4,11 @@ module.exports = {
     (process.env.NODE_ENV === 'production'
       ? 'https://bidblab.com'
       : 'http://localhost:4200'),
+  ADMINEND_URI:
+    process.env.ADMINEND_URI ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://bidblab.com'
+      : 'http://localhost:4300'),
   SECRET:
     process.env.SECRET ||
     '(@#*&YBE JWKDHGFW^&Q#Y@^#%^@YBhasgdctw673629qwiedhsb`yT^@&*((*#&*^TRDTFYEGHJKLw;cu63e2',

@@ -2,7 +2,7 @@ FROM node:9
 
 ## Add metadata
 LABEL version=1.0
-LABEL maintainer="Omar Doma"
+LABEL maintainer="Dev Pony"
 
 ## Specify the "working directory" for the rest of the Dockerfile
 WORKDIR /app
@@ -16,8 +16,8 @@ RUN npm i -g pm2 --quiet
 ## Add application code
 COPY . /app
 
-## Allows port 3000 to be publicly available
-EXPOSE 3000
+## Allows port 3200 to be publicly available
+EXPOSE 3200
 
 ## Set environment variables
 ENV NODE_ENV production
