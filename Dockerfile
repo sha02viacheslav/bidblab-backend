@@ -16,8 +16,8 @@ RUN npm i -g pm2 --quiet
 ## Add application code
 COPY . /app
 
-## Allows port 3200 to be publicly available
-EXPOSE 3200
+## Allows port 3000 to be publicly available
+EXPOSE 3000
 
 ## Set environment variables
 ENV NODE_ENV production
