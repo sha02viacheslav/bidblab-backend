@@ -111,10 +111,10 @@ router.patch(
 
 // ----------------------------------Admin-------------------------------------
 router.get(
-  '/admin/getUsers',
+  '/admin/getMembers',
   isAuthenticated,
   isAdmin,
-  errorHandler(adminCtrl.getUsers),
+  errorHandler(adminCtrl.getMembers)
 );
 router.get(
   '/admin/getUser/:userId',

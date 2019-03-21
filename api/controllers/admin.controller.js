@@ -7,20 +7,52 @@ const Encryption = require('../utils/encryption');
 const User = mongoose.model('User');
 const Question = mongoose.model('Question');
 
-module.exports.getUsers = async (req, res) => {
-  const { offset = 0, limit = 20 } = req.query;
-  const users = await User.find({})
-    .lean()
-    .skip(+offset)
-    .limit(+limit)
-    .select(
-      '-password -verificationToken -verificationTokenExpiry -resetPasswordToken -resetPasswordTokenExpiry',
-    )
-    .exec();
+module.exports.getMembers = async (req, res) => {
+
+  const { offset = 0, limit = 10, search } = req.query;
+  const query = search
+    ? {
+      $or: [
+        {
+          username: {
+            $regex: search,
+            $options: 'i',
+          },
+        },
+      ],
+    }
+    : {};
+
+  const start = Number(limit) * Number(offset);
+  const size = Number(limit);
+
+  const resolvedPromises = await Promise.all([
+    User.count(query).exec(),
+    User.find(query)
+      .lean()
+      .skip(start)
+      .limit(size)
+      .populate({
+        path: 'asker',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .populate({
+        path: 'answers.answerer',
+        select:
+          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+      })
+      .exec(), 
+  ]);
+  const totalMembers = resolvedPromises[0];
+  const members = resolvedPromises[1];
   res.status(200).json({
     err: null,
     msg: 'Users retrieved successfully.',
-    data: users,
+    data: {
+      totalMembers,
+      members,
+    }
   });
 };
 
@@ -475,3 +507,4 @@ module.exports.deleteAnswer = async (req, res) => {
     data: answer,
   });
 };
+
