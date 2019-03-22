@@ -170,6 +170,12 @@ router.delete(
   // isAdmin,
   errorHandler(adminCtrl.deleteAnswer),
 );
+router.post(
+  '/admin/sendMessage',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.sendMessage),
+);
 
 // ----------------------------------User-------------------------------------
 router.patch(

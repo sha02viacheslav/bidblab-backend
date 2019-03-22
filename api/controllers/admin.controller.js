@@ -508,3 +508,26 @@ module.exports.deleteAnswer = async (req, res) => {
   });
 };
 
+
+module.exports.sendMessage = async (req, res) => {
+  
+const mailgun = require("mailgun-js");
+const DOMAIN = 'verify.bidblab.com';
+const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN});
+
+debugger;
+const data = {
+	from: 'Bidblab <support@bidblab.com>',
+	to: req.body.contactFormEmail,
+	subject: req.body.contactFormSubjects,
+  text: req.body.contactFormMessage,
+};
+mg.messages().send(data);
+
+res.status(201).json({
+  err: null,
+  msg: 'User was created successfully.',
+  data: "succes"
+});
+};
+
