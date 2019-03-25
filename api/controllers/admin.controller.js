@@ -46,6 +46,10 @@ module.exports.getMembers = async (req, res) => {
   ]);
   const totalMembers = resolvedPromises[0];
   const members = resolvedPromises[1];
+  members.forEach(( element, index ) => {
+    element.index = start + index;
+  });
+  //console.log(members);
   res.status(200).json({
     err: null,
     msg: 'Users retrieved successfully.',
