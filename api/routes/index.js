@@ -140,11 +140,11 @@ router.patch(
   isAdmin,
   errorHandler(adminCtrl.resetUserPassword),
 );
-router.delete(
-  '/admin/deleteUser/:userId',
+router.post(
+  '/admin/deleteMembers',
   isAuthenticated,
   isAdmin,
-  errorHandler(adminCtrl.deleteUser),
+  errorHandler(adminCtrl.deleteMembers),
 );
 router.patch(
   '/admin/updateQuestion/:questionId',

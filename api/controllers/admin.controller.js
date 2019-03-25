@@ -7,6 +7,8 @@ const Encryption = require('../utils/encryption');
 const User = mongoose.model('User');
 const Question = mongoose.model('Question');
 
+const ObjectId = mongoose.Types.ObjectId;
+
 module.exports.getMembers = async (req, res) => {
 
   const { offset = 0, limit = 10, search } = req.query;
@@ -301,29 +303,26 @@ module.exports.resetUserPassword = async (req, res) => {
   });
 };
 
-module.exports.deleteUser = async (req, res) => {
-  if (!Validations.isObjectId(req.params.userId)) {
-    return res.status(422).json({
-      err: null,
-      msg: 'userId parameter must be a valid ObjectId.',
-      data: null,
-    });
-  }
-  const deletedUser = await User.findByIdAndRemove(req.params.userId)
-    .lean()
-    .select(
-      '-password -verificationToken -verificationTokenExpiry -resetPasswordToken -resetPasswordTokenExpiry',
-    )
+module.exports.deleteMembers = async (req, res) => {
+
+  let deletedMembers = [];
+  let totalDeleteMembers = 0;
+
+  for(let index in req.body){
+    let deletedUser = await User.findByIdAndRemove(req.body[index])
     .exec();
-  if (!deletedUser) {
-    return res
-      .status(404)
-      .json({ err: null, msg: 'User not found.', data: null });
+    if (deletedUser) {
+      totalDeleteMembers++;
+      deletedMembers.push(deletedUser);
+    }
   }
   res.status(200).json({
     err: null,
-    msg: 'User was deleted successfully.',
-    data: deletedUser,
+    msg: 'Member was deleted successfully.',
+    data: {
+      totalDeleteMembers,
+      deletedMembers
+    },
   });
 };
 
