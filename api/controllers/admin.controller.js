@@ -11,13 +11,13 @@ const ObjectId = mongoose.Types.ObjectId;
 
 module.exports.getMembers = async (req, res) => {
 
-  const { offset = 0, limit = 10, search } = req.query;
-  const query = search
+  const { offset = 0, limit = 10, filter, active, direction } = req.query;
+  const query = filter
     ? {
       $or: [
         {
           username: {
-            $regex: search,
+            $regex: filter,
             $options: 'i',
           },
         },
@@ -25,13 +25,32 @@ module.exports.getMembers = async (req, res) => {
     }
     : {};
 
+  var sortVariable = {};
+  if(active == 'name'){
+    if(direction == 'asc'){
+      sortVariable['firstName'] = 1;
+      sortVariable['lastName'] = 1;
+    }
+    else if(direction == 'desc'){
+      sortVariable['firstName'] = -1;
+      sortVariable['lastName'] = -1;
+    }
+  }
+  else{
+    if(direction == 'asc'){
+      sortVariable[active] = 1;
+    }
+    else if(direction == 'desc'){
+      sortVariable[active] = -1;
+    }
+  }
   const start = Number(limit) * Number(offset);
   const size = Number(limit);
-
   const resolvedPromises = await Promise.all([
     User.count(query).exec(),
     User.find(query)
       .lean()
+      .sort(sortVariable)
       .skip(start)
       .limit(size)
       .populate({
@@ -322,6 +341,35 @@ module.exports.deleteMembers = async (req, res) => {
     data: {
       totalDeleteMembers,
       deletedMembers
+    },
+  });
+};
+
+module.exports.changeMembersRole = async (req, res) => {
+
+  let suspendedMembers = [];
+  let totalSuspendMembers = 0;
+
+  for(let index in req.body){
+    let suspendedUser = await User.findByIdAndUpdate(req.body[index],
+      {
+        $set: {
+          role: req.params.roleType,
+        }
+      }
+    )
+    .exec();
+    if (suspendedUser) {
+      totalSuspendMembers++;
+      suspendedMembers.push(suspendedUser);
+    }
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Member was suspended successfully.',
+    data: {
+      totalSuspendMembers,
+      suspendedMembers
     },
   });
 };

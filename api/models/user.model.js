@@ -85,6 +85,9 @@ const userSchema = mongoose.Schema({
     url: String,
     path: String,
   },
+  role: {
+    type: String,
+  },
   follows: [followSchema],
   resetPasswordToken: String,
   resetPasswordTokenExpiry: Date,

@@ -146,6 +146,12 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.deleteMembers),
 );
+router.post(
+  '/admin/changeMembersRole/:roleType',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.changeMembersRole),
+);
 router.patch(
   '/admin/updateQuestion/:questionId',
   isAuthenticated,
