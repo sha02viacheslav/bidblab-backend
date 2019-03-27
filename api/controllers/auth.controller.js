@@ -85,8 +85,6 @@ module.exports.signup = async (req, res) => {
     .add(24, 'hours')
     .toDate();
   const newUser = await User.create(result.value);
-  
-  // debugger;
 
   // nodemailer.sendMail({
   //   from: config.MAILER.from,

@@ -378,8 +378,6 @@ module.exports.getQuestions = async (req, res) => {
   if(filterTags){
     tagFilterFlag = true;
   }
-  console.log(filterTags);
-  console.log(tagFilterFlag);
   let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
   
   const query = 
