@@ -182,6 +182,18 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.sendMessage),
 );
+router.get(
+  '/admin/getQuestions',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getQuestions)
+);
+router.post(
+  '/admin/deleteQuestions',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.deleteQuestions),
+);
 
 // ----------------------------------User-------------------------------------
 router.patch(

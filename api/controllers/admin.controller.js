@@ -44,33 +44,31 @@ module.exports.getMembers = async (req, res) => {
       sortVariable[active] = -1;
     }
   }
-  const start = Number(limit) * Number(offset);
+  let start = Number(limit) * Number(offset);
   const size = Number(limit);
-  const resolvedPromises = await Promise.all([
-    User.count(query).exec(),
-    User.find(query)
-      .lean()
-      .sort(sortVariable)
-      .skip(start)
-      .limit(size)
-      .populate({
-        path: 'asker',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .populate({
-        path: 'answers.answerer',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .exec(), 
-  ]);
-  const totalMembers = resolvedPromises[0];
-  const members = resolvedPromises[1];
+  const totalMembers = await User.count(query).exec();
+  if(totalMembers <= start){
+    start = 0;
+  }
+  const members = await User.find(query)
+    .lean()
+    .sort(sortVariable)
+    .skip(start)
+    .limit(size)
+    .populate({
+      path: 'asker',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'answers.answerer',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
   members.forEach(( element, index ) => {
     element.index = start + index;
   });
-  //console.log(members);
   res.status(200).json({
     err: null,
     msg: 'Users retrieved successfully.',
@@ -374,6 +372,87 @@ module.exports.changeMembersRole = async (req, res) => {
   });
 };
 
+module.exports.getQuestions = async (req, res) => {
+  const { offset = 0, limit = 10, filter, active, direction } = req.query;
+  const query = filter
+    ? {
+      $or: [
+        {
+          title: {
+            $regex: filter,
+            $options: 'i',
+          },
+        },
+      ],
+    }
+    : {};
+  var sortVariable = {};
+  if(direction == 'asc'){
+    sortVariable[active] = 1;
+  }
+  else if(direction == 'desc'){
+    sortVariable[active] = -1;
+  }
+  let start = Number(limit) * Number(offset);
+  const size = Number(limit);
+
+  const totalQuestions = await  Question.count(query).exec();
+  if(totalQuestions <= start){
+    start = 0;
+  }
+  const questions = await Question.find(query)
+    .lean()
+    .sort(sortVariable)
+    .skip(start)
+    .limit(size)
+    .populate({
+      path: 'asker',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'answers.answerer',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
+      
+  questions.forEach(( element, index ) => {
+    element.index = start + index;
+  });
+
+  res.status(200).json({
+    err: null,
+    msg: 'Questions retrieved successfully.',
+    data: {
+      totalQuestions,
+      questions,
+    },
+  });
+};
+
+module.exports.deleteQuestions = async (req, res) => {
+
+  let deletedQuestions = [];
+  let totalDeleteQuestions = 0;
+
+  for(let index in req.body){
+    let deletedQuestion = await Question.findByIdAndRemove(req.body[index])
+    .exec();
+    if (deletedQuestion) {
+      totalDeleteQuestions++;
+      deletedQuestions.push(deletedQuestion);
+    }
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Question was deleted successfully.',
+    data: {
+      totalDeleteQuestions,
+      deletedQuestions
+    },
+  });
+};
 module.exports.updateQuestion = async (req, res) => {
   if (!Validations.isObjectId(req.params.questionId)) {
     return res.status(422).json({
