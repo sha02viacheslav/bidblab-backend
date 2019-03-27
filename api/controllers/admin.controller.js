@@ -11,13 +11,13 @@ const ObjectId = mongoose.Types.ObjectId;
 
 module.exports.getMembers = async (req, res) => {
 
-  const { offset = 0, limit = 10, filter, active, direction } = req.query;
-  const query = filter
+  const { offset = 0, limit = 10, search, active, direction } = req.query;
+  const query = search
     ? {
       $or: [
         {
           username: {
-            $regex: filter,
+            $regex: search,
             $options: 'i',
           },
         },
@@ -373,13 +373,13 @@ module.exports.changeMembersRole = async (req, res) => {
 };
 
 module.exports.getQuestions = async (req, res) => {
-  const { offset = 0, limit = 10, filter, active, direction } = req.query;
-  const query = filter
+  const { offset = 0, limit = 10, search, active, direction } = req.query;
+  const query = search
     ? {
       $or: [
         {
           title: {
-            $regex: filter,
+            $regex: search,
             $options: 'i',
           },
         },
