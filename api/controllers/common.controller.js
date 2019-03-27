@@ -389,12 +389,15 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
       data: null,
     });
   }
+  console.log(req.query.interestFilter);
 
   let interestFilterFlag = true;
   if(req.query.interestFilter){
     interestFilterFlag = false;
   }
   let interestArray = req.query.interestFilter.replace(/^\[|\]$/g, "").split(",");
+  console.log(interestFilterFlag);
+  console.log(interestArray);
   let resolvedPromises = await Promise.all([
     Question.count( { 
       asker: req.query.userId,

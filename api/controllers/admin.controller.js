@@ -24,7 +24,6 @@ module.exports.getMembers = async (req, res) => {
       ],
     }
     : {};
-
   var sortVariable = {};
   if(active == 'name'){
     if(direction == 'asc'){
@@ -373,19 +372,32 @@ module.exports.changeMembersRole = async (req, res) => {
 };
 
 module.exports.getQuestions = async (req, res) => {
-  const { offset = 0, limit = 10, search, active, direction } = req.query;
-  const query = search
-    ? {
-      $or: [
+  let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  filterTags = filterTags.trim();
+  let tagFilterFlag = false;
+  if(filterTags){
+    tagFilterFlag = true;
+  }
+  console.log(filterTags);
+  console.log(tagFilterFlag);
+  let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
+  
+  const query = 
+    {
+      $and: [
+        search?
         {
           title: {
             $regex: search,
             $options: 'i',
           },
-        },
+        }:{},
+        tagFilterFlag?{
+            "tag": { "$in": interestArray }
+        }:{},
       ],
-    }
-    : {};
+    };
+  
   var sortVariable = {};
   if(direction == 'asc'){
     sortVariable[active] = 1;
@@ -400,6 +412,20 @@ module.exports.getQuestions = async (req, res) => {
   if(totalQuestions <= start){
     start = 0;
   }
+  let questionTags = await Question.aggregate([
+    {
+      $group: {
+        _id: "$tag",
+      }
+    },
+    {
+      $group: {
+        _id: "null",
+        tags: { "$push": "$_id" }
+      }
+    }
+  ]) .exec();
+  questionTags = questionTags[0].tags;
   const questions = await Question.find(query)
     .lean()
     .sort(sortVariable)
@@ -426,6 +452,7 @@ module.exports.getQuestions = async (req, res) => {
     msg: 'Questions retrieved successfully.',
     data: {
       totalQuestions,
+      questionTags,
       questions,
     },
   });
