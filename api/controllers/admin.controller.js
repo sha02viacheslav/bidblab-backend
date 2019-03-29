@@ -521,7 +521,7 @@ module.exports.updateQuestion = async (req, res) => {
       title: joi
         .string()
         .trim()
-        .max(200),
+        .max(500),
       tag: joi
         .string()
         .trim()
