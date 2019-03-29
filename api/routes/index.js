@@ -194,6 +194,12 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.deleteQuestions),
 );
+router.post(
+  '/admin/changeQuestionsRole/:roleType',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.changeQuestionsRole),
+);
 
 // ----------------------------------User-------------------------------------
 router.patch(

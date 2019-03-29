@@ -92,6 +92,10 @@ const questionSchema = mongoose.Schema({
     url: String,
     path: String,
   },
+  role: {
+    type: String,
+    default: "activate",
+  },
 });
 
 mongoose.model('Question', questionSchema);

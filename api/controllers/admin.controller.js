@@ -403,6 +403,7 @@ module.exports.getQuestions = async (req, res) => {
   else if(direction == 'desc'){
     sortVariable[active] = -1;
   }
+  console.log(sortVariable);
   let start = Number(limit) * Number(offset);
   const size = Number(limit);
 
@@ -478,6 +479,35 @@ module.exports.deleteQuestions = async (req, res) => {
     },
   });
 };
+module.exports.changeQuestionsRole = async (req, res) => {
+
+  let suspendedQuestions = [];
+  let totalSuspendQuestions = 0;
+
+  for(let index in req.body){
+    let suspendedQuestion = await Question.findByIdAndUpdate(req.body[index],
+      {
+        $set: {
+          role: req.params.roleType,
+        }
+      }
+    )
+    .exec();
+    if (suspendedQuestion) {
+      totalSuspendQuestions++;
+      suspendedQuestions.push(suspendedQuestion);
+    }
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Question was suspended successfully.',
+    data: {
+      totalSuspendQuestions,
+      suspendedQuestions
+    },
+  });
+};
+
 module.exports.updateQuestion = async (req, res) => {
   if (!Validations.isObjectId(req.params.questionId)) {
     return res.status(422).json({

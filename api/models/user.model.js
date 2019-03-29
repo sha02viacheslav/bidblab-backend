@@ -87,6 +87,7 @@ const userSchema = mongoose.Schema({
   },
   role: {
     type: String,
+    default: "activate",
   },
   follows: [followSchema],
   resetPasswordToken: String,
