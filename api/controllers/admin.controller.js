@@ -65,9 +65,23 @@ module.exports.getMembers = async (req, res) => {
         '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
     })
     .exec();
-  members.forEach(( element, index ) => {
-    element.index = start + index;
-  });
+  
+  for(var index in members){
+    members[index].index = start + index;
+    members[index].totalQuestions = await Question.count( 
+      { asker: members[index]._id } 
+      )
+      .exec();
+    members[index].totalAnswers = await Question.count({ 
+        "answers": {
+          "$elemMatch": {
+            "answerer": members[index]._id
+          }
+        } 
+      })
+      .exec();
+  }
+  console.log(members);
   res.status(200).json({
     err: null,
     msg: 'Users retrieved successfully.',
