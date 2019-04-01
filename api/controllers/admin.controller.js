@@ -180,90 +180,6 @@ module.exports.createUser = async (req, res) => {
   });
 };
 
-module.exports.updateUser = async (req, res) => {
-  if (!Validations.isObjectId(req.params.userId)) {
-    return res.status(422).json({
-      err: null,
-      msg: 'userId parameter must be a valid ObjectId.',
-      data: null,
-    });
-  }
-  const schema = joi
-    .object({
-      firstName: joi.string().trim(),
-      lastName: joi.string().trim(),
-      username: joi
-        .string()
-        .trim()
-        .lowercase()
-        .alphanum()
-        .min(3)
-        .max(30),
-      email: joi
-        .string()
-        .trim()
-        .lowercase()
-        .email(),
-    })
-    .options({
-      stripUnknown: true,
-    });
-  const result = schema.validate(req.body);
-  if (result.error) {
-    return res.status(422).json({
-      msg: result.error.details[0].message,
-      err: null,
-      data: null,
-    });
-  }
-  if (result.value.username || result.value.email) {
-    const user = await User.findOne({
-      _id: {
-        $ne: req.params.userId,
-      },
-      $or: [
-        {
-          username: result.value.username,
-        },
-        {
-          email: result.value.email,
-        },
-      ],
-    })
-      .lean()
-      .exec();
-    if (user) {
-      return res.status(422).json({
-        err: null,
-        msg: 'Username or Email already exists, please choose another.',
-        data: null,
-      });
-    }
-  }
-  result.value.updatedAt = moment().toDate();
-  const updatedUser = await User.findByIdAndUpdate(
-    req.params.userId,
-    {
-      $set: result.value,
-    },
-    {
-      new: true,
-    },
-  ).exec();
-  if (!updatedUser) {
-    return res.status(404).json({
-      err: null,
-      msg: 'Account not found.',
-      data: null,
-    });
-  }
-  res.status(200).json({
-    err: null,
-    msg: 'Profile was updated successfully.',
-    data: updatedUser.toObject(),
-  });
-};
-
 module.exports.resetUserPassword = async (req, res) => {
   if (!Validations.isObjectId(req.params.userId)) {
     return res.status(422).json({
@@ -702,9 +618,9 @@ module.exports.sendMessage = async (req, res) => {
 
   const data = {
     from: 'Bidblab <support@bidblab.com>',
-    to: req.body.contactFormEmail,
-    subject: req.body.contactFormSubjects,
-    text: req.body.contactFormMessage,
+    to: req.body.to,
+    subject: req.body.subject,
+    text: req.body.message,
   };
   mg.messages().send(data);
 
@@ -712,6 +628,91 @@ module.exports.sendMessage = async (req, res) => {
     err: null,
     msg: 'User was created successfully.',
     data: "succes"
+  });
+};
+
+module.exports.updateUser = async (req, res) => {
+  const schema = joi
+    .object({
+      firstName: joi.string().trim(),
+      lastName: joi.string().trim(),
+      username: joi
+        .string()
+        .trim()
+        .lowercase()
+        .alphanum()
+        .min(3)
+        .max(30),
+      email: joi
+        .string()
+        .trim()
+        .lowercase()
+        .email(),
+      aboutme: joi
+        .string(),
+      phone: joi
+        .string(),
+      tags: joi
+        .array()
+        .items(
+          joi.string()
+        ),
+      birthday: joi
+        .date(),
+      gender: joi
+        .string(),
+      physicaladdress: joi
+        .string(),
+      physicalcity: joi
+        .string(),
+      physicalstate: joi
+        .string(),
+      physicalzipcode: joi
+        .string(),
+      shippingaddress: joi
+        .string(),
+      shippingcity: joi
+        .string(),
+      shippingstate: joi
+        .string(),
+      shippingzipcode: joi
+        .string(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+ 
+  result.value.updatedAt = moment().toDate();
+  const updatedUser = await User.findByIdAndUpdate(
+    req.params.userId,
+    {
+      $set: result.value,
+    },
+    {
+      new: true,
+    },
+  )
+    .select('-createdAt -updatedAt')
+    .exec();
+  if (!updatedUser) {
+    return res.status(404).json({
+      err: null,
+      msg: 'Account not found.',
+      data: null,
+    });
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Profile was updated successfully.',
+    data: updatedUser.toObject(),
   });
 };
 
