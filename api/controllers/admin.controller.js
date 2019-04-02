@@ -6,6 +6,8 @@ const Encryption = require('../utils/encryption');
 
 const User = mongoose.model('User');
 const Question = mongoose.model('Question');
+const Credit = mongoose.model('Credit');
+const Interest = mongoose.model('Interest');
 
 const ObjectId = mongoose.Types.ObjectId;
 module.exports.createUser = async (req, res) => {
@@ -837,6 +839,73 @@ module.exports.sendMessage = async (req, res) => {
     data: "succes"
   });
 };
+
+module.exports.getDefaultCredits  = async (req, res) => {
+	const defaultCredits = await Credit.find({ dataType: "credit"})
+	.exec();
+	if (!defaultCredits) {
+		res.status(200).json({
+			err: null,
+			msg: 'DefaultCredits was not found.',
+			data: null,
+		});
+	}
+
+	res.status(200).json({
+		err: null,
+		msg: 'StandardInterests was found successfully.',
+		data: defaultCredits[0],
+	});
+}
+
+module.exports.changeDefaultCredits  = async (req, res) => {
+	const schema = joi
+		.object({
+			defaultQuestionCredit: joi
+				.number()
+				.required(),
+			defaultPublicAnswerCredit: joi
+				.number()
+				.required(),
+			defaultPrivateAnswerCredit: joi
+				.number()
+				.required()
+		})
+		.options({
+			stripUnknown: true,
+		});	
+	const result = schema.validate(req.body);
+	if (result.error) {
+		return res.status(200).json({
+			err: null,
+			msg: result.error.details[0].message,
+			data: null,
+		});
+	}
+	const defaultCredits = await Credit.findByIdAndUpdate(
+		req.body._id,
+		{
+			$set: result.value,
+		},
+		{
+			new: true,
+		},
+	)
+	.exec();
+	if (!defaultCredits) {
+		res.status(200).json({
+			err: null,
+			msg: 'DefaultCredits was not changed.',
+			data: null,
+		});
+	}
+
+	res.status(200).json({
+		err: null,
+		msg: 'DefaultCredits was found successfully.',
+		data: defaultCredits[0],
+	});
+}
 
 
 

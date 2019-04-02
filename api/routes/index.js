@@ -203,6 +203,18 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.changeQuestionsRole),
 );
+router.get(
+  '/admin/getDefaultCredits',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getDefaultCredits),
+);
+router.post(
+  '/admin/changeDefaultCredits',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.changeDefaultCredits),
+);
 
 // ----------------------------------User-------------------------------------
 router.patch(
