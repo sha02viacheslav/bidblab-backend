@@ -15,7 +15,10 @@ const app = express();
 app.set('secret', config.SECRET);
 
 app.use(logger(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-const origins = process.env.NODE_ENV === 'production' ? ['https://bidblab.com', 'https://www.bidblab.com'] : ['http://localhost:4300', 'http://localhost:4200'];
+const origins = process.env.NODE_ENV === 'production' ? ['https://bidblab.com', 
+                              'https://www.bidblab.com'] : ['http://localhost:4300',
+                              'http://localhost:4200',
+                              'http://localhost:4400'];
 app.use(
   cors({
     origin: origins,

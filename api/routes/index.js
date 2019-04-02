@@ -110,23 +110,18 @@ router.patch(
 );
 
 // ----------------------------------Admin-------------------------------------
-router.get(
-  '/admin/getMembers',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.getMembers)
-);
-router.get(
-  '/admin/getUser/:userId',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.getUser),
-);
+// ------------User------------
 router.post(
   '/admin/createUser',
   isAuthenticated,
   isAdmin,
   errorHandler(adminCtrl.createUser),
+);
+router.get(
+  '/admin/getMembers',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getMembers)
 );
 router.patch(
   '/admin/updateUser/:userId',
@@ -134,17 +129,25 @@ router.patch(
   isAdmin,
   errorHandler(adminCtrl.updateUser),
 );
-router.patch(
-  '/admin/resetUserPassword/:userId',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.resetUserPassword),
-);
 router.post(
   '/admin/deleteMembers',
   isAuthenticated,
   isAdmin,
   errorHandler(adminCtrl.deleteMembers),
+);
+// ------------Question------------
+router.get(
+  '/admin/getUser/:userId',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getUser),
+);
+
+router.patch(
+  '/admin/resetUserPassword/:userId',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.resetUserPassword),
 );
 router.post(
   '/admin/changeMembersRole/:roleType',
@@ -173,7 +176,7 @@ router.patch(
 router.delete(
   '/admin/deleteAnswer/:questionId/:answerId',
   isAuthenticated,
-  // isAdmin,
+  isAdmin,
   errorHandler(adminCtrl.deleteAnswer),
 );
 router.post(

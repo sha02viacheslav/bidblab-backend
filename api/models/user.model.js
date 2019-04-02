@@ -48,9 +48,11 @@ const userSchema = mongoose.Schema({
   },
   birthday: {
     type: String,
+    default: Date.now,
   },
   gender: {
     type: String,
+    default: 'male',
   },
   physicaladdress: {
     type: String,

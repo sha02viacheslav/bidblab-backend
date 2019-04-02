@@ -8,7 +8,94 @@ const User = mongoose.model('User');
 const Question = mongoose.model('Question');
 
 const ObjectId = mongoose.Types.ObjectId;
-
+module.exports.createUser = async (req, res) => {
+	const schema = joi
+		.object({
+			firstName: joi
+				.string()
+				.trim()
+				.required(),
+			lastName: joi
+				.string()
+				.trim()
+				.required(),
+			username: joi
+				.string()
+				.trim()
+				.lowercase()
+				.alphanum()
+				.min(3)
+				.max(30)
+				.required(),
+			email: joi
+				.string()
+				.trim()
+				.lowercase()
+				.email()
+				.required(),
+			password: joi
+				.string()
+				.trim()
+				.min(8)
+				.required(),
+			confirmPassword: joi
+				.string()
+				.trim()
+				.equal(req.body.password)
+				.required(),
+		})
+		.options({
+			stripUnknown: true,
+		});
+	const result = schema.validate(req.body);
+	if (result.error) {
+		return res.status(200).json({
+			err: null,
+			msg: result.error.details[0].message,
+			data: null,
+		});
+	}
+	const user = await User.findOne({
+		$or: [
+			{
+				username: result.value.username,
+			},
+			{
+				email: result.value.email,
+			},
+		],
+	})
+	.lean()
+	.exec();
+	if (user) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Username or Email already exists, please choose another.',
+			data: null,
+		});
+	}
+	result.value.password = await Encryption.hashPassword(result.value.password);
+	result.value.verified = true;
+	result.value.phone = req.body.phone;
+	result.value.birthday = req.body.birthday;
+	result.value.gender = req.body.gender;
+	result.value.aboutme = req.body.aboutme;
+	result.value.tags = req.body.tags;
+	result.value.physicaladdress = req.body.physicaladdress;
+	result.value.physicalcity = req.body.physicalcity;
+	result.value.physicalstate = req.body.physicalstate;
+	result.value.physicalzipcode = req.body.physicalzipcode;
+	result.value.shippingaddress = req.body.shippingaddress;
+	result.value.shippingcity = req.body.shippingcity;
+	result.value.shippingstate = req.body.shippingstate;
+	result.value.shippingzipcode = req.body.shippingzipcode;
+	const newUser = await User.create(result.value);
+	res.status(201).json({
+		err: null,
+		msg: 'User was created successfully.',
+		data: newUser.toObject(),
+	});
+};
 module.exports.getMembers = async (req, res) => {
 
   const { offset = 0, limit = 10, search, active, direction } = req.query;
@@ -17,6 +104,18 @@ module.exports.getMembers = async (req, res) => {
       $or: [
         {
           username: {
+            $regex: search,
+            $options: 'i',
+          },
+        },
+        {
+          firstName: {
+            $regex: search,
+            $options: 'i',
+          },
+        },
+        {
+          lastName: {
             $regex: search,
             $options: 'i',
           },
@@ -66,22 +165,87 @@ module.exports.getMembers = async (req, res) => {
     })
     .exec();
   
-  for(var index in members){
-    members[index].index = start + index;
-    members[index].totalQuestions = await Question.count( 
-      { asker: members[index]._id } 
-      )
-      .exec();
-    members[index].totalAnswers = await Question.count({ 
-        "answers": {
-          "$elemMatch": {
-            "answerer": members[index]._id
+  for(var key in members){
+    members[key].index = start + Number(key);
+    members[key].totalQuestions = 0;
+    members[key].totalAnswers = 0;
+    members[key].totalFollowers = 0;
+    members[key].questionCredits = 0;
+    members[key].answerCredits = 0;
+    members[key].referalCredits = 0;
+    let question = await Question.aggregate(
+      [
+        { 
+          $match: {
+            "asker": members[key]._id   
           }
-        } 
-      })
-      .exec();
-  }
-  console.log(members);
+        },
+        {
+          $group: {
+            _id: "null", 
+            totalQuestions: {
+              $sum: 1
+            },
+            questionCredits: {
+              $sum: "$credit"
+            }
+          }
+        }
+      ]
+    )
+    .exec();
+
+    if(question){
+      if(question[0]){
+        members[key].totalQuestions = question[0].totalQuestions? question[0].totalQuestions : 0;
+        members[key].questionCredits = question[0].questionCredits? question[0].questionCredits : 0;
+      }
+    }
+
+    question = await Question.aggregate(
+      [
+        { 
+          $match: { 
+            "answers":{
+              "$elemMatch": {
+                "answerer": members[key]._id
+              }
+            }   
+          }
+        },
+        { $unwind : "$answers" },
+        { 
+          $match: { 
+            "answers.answerer": members[key]._id  
+          }
+        },
+        { $project : { "answers" : 1, "_id": 0 } },
+        {
+          $group: {
+            _id: "null", 
+            totalAnswers: {
+              $sum: 1
+            },
+            answerCredits: {
+              $sum: "$answers.credit"
+            }
+          }
+        }
+      ]
+    )
+    .exec();
+    if(question){
+      if(question[0]){
+        members[key].totalAnswers = question[0].totalAnswers? question[0].totalAnswers : 0;
+        members[key].answerCredits = question[0].answerCredits? question[0].answerCredits : 0;
+      }
+    }
+    if(question){
+      if(question[0]){
+        members[key].referalCredits = question[0].answerCredits? question[0].answerCredits : 0;
+      }
+    }
+  } 
   res.status(200).json({
     err: null,
     msg: 'Users retrieved successfully.',
@@ -91,7 +255,110 @@ module.exports.getMembers = async (req, res) => {
     }
   });
 };
-
+module.exports.updateUser = async (req, res) => {
+  	const schema = joi
+		.object({
+			firstName: joi
+				.string()
+				.trim()
+				.required(),
+			lastName: joi
+				.string()
+				.trim()
+				.required(),
+			username: joi
+				.string()
+				.trim()
+				.lowercase()
+				.alphanum()
+				.min(3)
+				.max(30)
+				.required(),
+			email: joi
+				.string()
+				.trim()
+				.lowercase()
+				.email()
+				.required(),
+		})
+		.options({
+			stripUnknown: true,
+		});	
+    const result = schema.validate(req.body);
+    if (result.error) {
+		return res.status(200).json({
+			err: null,
+			msg: result.error.details[0].message,
+			data: null,
+		});
+    }
+    if(req.body.password){
+      	const schemaPassword = joi
+			.object({
+				password: joi
+					.string()
+					.trim()
+					.min(8)
+					.required(),
+				confirmPassword: joi
+					.string()
+					.trim()
+					.equal(req.body.password)
+					.required(),
+			})
+			.options({
+				stripUnknown: true,
+			});
+		const resultPassword = schemaPassword.validate(req.body);
+		if (resultPassword.error) {
+			return res.status(200).json({
+				err: null,
+				msg: resultPassword.error.details[0].message,
+				data: null,
+			});
+		  }
+		result.value.password = await Encryption.hashPassword(resultPassword.value.password);
+    }
+  
+	result.value.verified = true;
+	result.value.phone = req.body.phone;
+	result.value.birthday = req.body.birthday;
+	result.value.gender = req.body.gender;
+	result.value.aboutme = req.body.aboutme;
+	result.value.tags = req.body.tags;
+	result.value.physicaladdress = req.body.physicaladdress;
+	result.value.physicalcity = req.body.physicalcity;
+	result.value.physicalstate = req.body.physicalstate;
+	result.value.physicalzipcode = req.body.physicalzipcode;
+	result.value.shippingaddress = req.body.shippingaddress;
+	result.value.shippingcity = req.body.shippingcity;
+	result.value.shippingstate = req.body.shippingstate;
+	result.value.shippingzipcode = req.body.shippingzipcode;
+	result.value.updatedAt = moment().toDate();
+	const updatedUser = await User.findByIdAndUpdate(
+		req.params.userId,
+		{
+			$set: result.value,
+		},
+		{
+			new: true,
+		},
+	)
+    .select('-createdAt -updatedAt')
+    .exec();
+	if (!updatedUser) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Account not found.',
+			data: null,
+		});
+	}
+	res.status(200).json({
+		err: null,
+		msg: 'Profile was updated successfully.',
+		data: updatedUser.toObject(),
+	});
+};
 module.exports.getUser = async (req, res) => {
   if (!Validations.isObjectId(req.params.userId)) {
     return res.status(422).json({
@@ -118,81 +385,7 @@ module.exports.getUser = async (req, res) => {
   });
 };
 
-module.exports.createUser = async (req, res) => {
-  const schema = joi
-    .object({
-      firstName: joi
-        .string()
-        .trim()
-        .required(),
-      lastName: joi
-        .string()
-        .trim()
-        .required(),
-      username: joi
-        .string()
-        .trim()
-        .lowercase()
-        .alphanum()
-        .min(3)
-        .max(30)
-        .required(),
-      email: joi
-        .string()
-        .trim()
-        .lowercase()
-        .email()
-        .required(),
-      password: joi
-        .string()
-        .trim()
-        .min(8)
-        .required(),
-      confirmPassword: joi
-        .string()
-        .trim()
-        .equal(req.body.password)
-        .required(),
-    })
-    .options({
-      stripUnknown: true,
-    });
-  const result = schema.validate(req.body);
-  if (result.error) {
-    return res.status(422).json({
-      msg: result.error.details[0].message,
-      err: null,
-      data: null,
-    });
-  }
-  const user = await User.findOne({
-    $or: [
-      {
-        username: result.value.username,
-      },
-      {
-        email: result.value.email,
-      },
-    ],
-  })
-    .lean()
-    .exec();
-  if (user) {
-    return res.status(422).json({
-      err: null,
-      msg: 'Username or Email already exists, please choose another.',
-      data: null,
-    });
-  }
-  result.value.password = await Encryption.hashPassword(result.value.password);
-  result.value.verified = true;
-  const newUser = await User.create(result.value);
-  res.status(201).json({
-    err: null,
-    msg: 'User was created successfully.',
-    data: newUser.toObject(),
-  });
-};
+
 
 module.exports.resetUserPassword = async (req, res) => {
   if (!Validations.isObjectId(req.params.userId)) {
@@ -645,88 +838,5 @@ module.exports.sendMessage = async (req, res) => {
   });
 };
 
-module.exports.updateUser = async (req, res) => {
-  const schema = joi
-    .object({
-      firstName: joi.string().trim(),
-      lastName: joi.string().trim(),
-      username: joi
-        .string()
-        .trim()
-        .lowercase()
-        .alphanum()
-        .min(3)
-        .max(30),
-      email: joi
-        .string()
-        .trim()
-        .lowercase()
-        .email(),
-      aboutme: joi
-        .string(),
-      phone: joi
-        .string(),
-      tags: joi
-        .array()
-        .items(
-          joi.string()
-        ),
-      birthday: joi
-        .date(),
-      gender: joi
-        .string(),
-      physicaladdress: joi
-        .string(),
-      physicalcity: joi
-        .string(),
-      physicalstate: joi
-        .string(),
-      physicalzipcode: joi
-        .string(),
-      shippingaddress: joi
-        .string(),
-      shippingcity: joi
-        .string(),
-      shippingstate: joi
-        .string(),
-      shippingzipcode: joi
-        .string(),
-    })
-    .options({
-      stripUnknown: true,
-    });
-  const result = schema.validate(req.body);
-  if (result.error) {
-    return res.status(422).json({
-      msg: result.error.details[0].message,
-      err: null,
-      data: null,
-    });
-  }
- 
-  result.value.updatedAt = moment().toDate();
-  const updatedUser = await User.findByIdAndUpdate(
-    req.params.userId,
-    {
-      $set: result.value,
-    },
-    {
-      new: true,
-    },
-  )
-    .select('-createdAt -updatedAt')
-    .exec();
-  if (!updatedUser) {
-    return res.status(404).json({
-      err: null,
-      msg: 'Account not found.',
-      data: null,
-    });
-  }
-  res.status(200).json({
-    err: null,
-    msg: 'Profile was updated successfully.',
-    data: updatedUser.toObject(),
-  });
-};
+
 
