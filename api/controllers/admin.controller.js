@@ -143,6 +143,9 @@ module.exports.getMembers = async (req, res) => {
     else if(direction == 'desc'){
       sortVariable[active] = -1;
     }
+    else{
+      sortVariable['createdAt'] = -1;
+    }
   }
   let start = Number(limit) * Number(offset);
   const size = Number(limit);
@@ -527,6 +530,9 @@ module.exports.getQuestions = async (req, res) => {
   }
   else if(direction == 'desc'){
     sortVariable[active] = -1;
+  }
+  else{
+    sortVariable['createdAt'] = -1;
   }
   let start = Number(limit) * Number(offset);
   const size = Number(limit);
@@ -945,6 +951,9 @@ module.exports.getAnswers = async (req, res) => {
 	}
 	else if(direction == 'desc'){
 		sortVariable[active] = -1;
+  }
+  else{
+    sortVariable['createdAt'] = -1;
   }
   console.log(sortVariable);
 	let totalAnswers = await Question.aggregate(
