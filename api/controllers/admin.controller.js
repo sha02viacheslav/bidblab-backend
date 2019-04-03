@@ -945,7 +945,8 @@ module.exports.getAnswers = async (req, res) => {
 	}
 	else if(direction == 'desc'){
 		sortVariable[active] = -1;
-	}
+  }
+  console.log(sortVariable);
 	let totalAnswers = await Question.aggregate(
 		[
 			{ $match: query },
@@ -1013,11 +1014,11 @@ module.exports.getAnswers = async (req, res) => {
           "answerer.resetPasswordTokenExpiry" : 0,
           "answerer.verificationToken" : 0,
           "answerer.verificationTokenExpiry" : 0,
-          "asker.password" : 0,
-          "asker.resetPasswordToken" : 0,
-          "asker.resetPasswordTokenExpiry" : 0,
-          "asker.verificationToken" : 0,
-          "asker.verificationTokenExpiry" : 0,
+          // "asker.password" : 0,
+          // "asker.resetPasswordToken" : 0,
+          // "asker.resetPasswordTokenExpiry" : 0,
+          // "asker.verificationToken" : 0,
+          // "asker.verificationTokenExpiry" : 0,
         }
       },
 			{ $sort : sortVariable },
@@ -1025,7 +1026,7 @@ module.exports.getAnswers = async (req, res) => {
 			{ $limit : size } 
 		]
   ).exec();
-    
+    console.log(answers);
 	answers.forEach(( element, index ) => {
 	  element.index = start + index;
 	});
