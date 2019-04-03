@@ -528,7 +528,6 @@ module.exports.getQuestions = async (req, res) => {
   else if(direction == 'desc'){
     sortVariable[active] = -1;
   }
-  console.log(sortVariable);
   let start = Number(limit) * Number(offset);
   const size = Number(limit);
 
@@ -914,10 +913,9 @@ module.exports.getAnswers = async (req, res) => {
 	filterTags = filterTags.trim();
 	let tagFilterFlag = false;
 	if(filterTags){
-	  tagFilterFlag = true;
+	  	tagFilterFlag = true;
 	}
 	let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
-	
 	const query =	
 		{
 			// "answers": {
@@ -946,41 +944,26 @@ module.exports.getAnswers = async (req, res) => {
 	  	sortVariable[active] = 1;
 	}
 	else if(direction == 'desc'){
-	 	 sortVariable[active] = -1;
+		sortVariable[active] = -1;
 	}
-	let start = Number(limit) * Number(offset);
-	const size = Number(limit);
-  
-	let totalAnswers = await  await Question.aggregate(
+	let totalAnswers = await Question.aggregate(
 		[
-			{ 
-				$match: query
-			},
+			{ $match: query },
 			{ $unwind : "$answers" },
-			// { 
-			// 	$match: { 
-			// 		"answers.answerer": ObjectId(req.query.userId)  
-			// 	}
-			// },
 			{ $group : { 
 				_id: "null", 
-				totalAnswers: {
-					$sum: 1
-				},
+				totalAnswers: { $sum: 1 },
 			}},
 		]
-	).exec();
-	totalAnswers = totalAnswers[0].totalAnswers;
-	if(totalAnswers <= start){
-	 	start = 0;
-	}
+  	).exec();
+	totalAnswers = totalAnswers.length? totalAnswers[0].totalAnswers : 0;
+	let start = Number(limit) * Number(offset);
+	const size = Number(limit);
+	start = totalAnswers <= start? 0 : start;
 
-	
 	let answerTags = await Question.aggregate([
 		{
-			$group: {
-				_id: "$tag",
-			}
+			$group: { _id: "$tag" }
 		},
 		{
 			$group: {
@@ -993,15 +976,8 @@ module.exports.getAnswers = async (req, res) => {
 
 	const answers = await Question.aggregate(
 		[
-			{ 
-				$match: query
-			},
+			{ $match: query },
 			{ $unwind : "$answers" },
-			// { 
-			// 	$match: { 
-			// 		"answers.answerer": ObjectId(req.query.userId)  
-			// 	}
-			// },
 			{ $project : { 
 				content: "$answers.content",
 				credit: "$answers.credit",
@@ -1012,8 +988,7 @@ module.exports.getAnswers = async (req, res) => {
 			}},
 			{ $sort : sortVariable },
 			{ $skip: start },
-			{ $limit : size }
-
+			{ $limit : size } 
 		]
 	).exec();
 	
@@ -1033,19 +1008,19 @@ module.exports.getAnswers = async (req, res) => {
 	// 	  '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
 	//   })
 	//   .exec();
-		
+    
 	answers.forEach(( element, index ) => {
 	  element.index = start + index;
 	});
   
 	res.status(200).json({
-	  err: null,
-	  msg: 'Questions retrieved successfully.',
-	  data: {
-		totalAnswers,
-		answerTags,
-		answers,
-	  },
+		err: null,
+		msg: 'Answers retrieved successfully.',
+		data: {
+			totalAnswers,
+			answerTags,
+			answers,
+		},
 	});
 };
 
