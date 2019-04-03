@@ -909,3 +909,144 @@ module.exports.changeDefaultCredits  = async (req, res) => {
 
 
 
+module.exports.getAnswers = async (req, res) => {
+	let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+	filterTags = filterTags.trim();
+	let tagFilterFlag = false;
+	if(filterTags){
+	  tagFilterFlag = true;
+	}
+	let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
+	
+	const query =	
+		{
+			// "answers": {
+			// 	"$elemMatch": {
+			// 		"answerer": req.query.userId,
+			// 		"answertype": "public",
+			// 	}
+			// },
+			$and: [
+				search?
+					{
+						title: {
+						$regex: search,
+						$options: 'i',
+						},
+					}: { },
+				tagFilterFlag?
+					{
+						"tag": { "$in": interestArray }
+					}: { },
+			],
+		}
+	
+	var sortVariable = {};
+	if(direction == 'asc'){
+	  	sortVariable[active] = 1;
+	}
+	else if(direction == 'desc'){
+	 	 sortVariable[active] = -1;
+	}
+	let start = Number(limit) * Number(offset);
+	const size = Number(limit);
+  
+	let totalAnswers = await  await Question.aggregate(
+		[
+			{ 
+				$match: query
+			},
+			{ $unwind : "$answers" },
+			// { 
+			// 	$match: { 
+			// 		"answers.answerer": ObjectId(req.query.userId)  
+			// 	}
+			// },
+			{ $group : { 
+				_id: "null", 
+				totalAnswers: {
+					$sum: 1
+				},
+			}},
+		]
+	).exec();
+	totalAnswers = totalAnswers[0].totalAnswers;
+	if(totalAnswers <= start){
+	 	start = 0;
+	}
+
+	
+	let answerTags = await Question.aggregate([
+		{
+			$group: {
+				_id: "$tag",
+			}
+		},
+		{
+			$group: {
+				_id: "null",
+				tags: { "$push": "$_id" }
+			}
+		}
+	]) .exec();
+	answerTags = answerTags[0].tags;
+
+	const answers = await Question.aggregate(
+		[
+			{ 
+				$match: query
+			},
+			{ $unwind : "$answers" },
+			// { 
+			// 	$match: { 
+			// 		"answers.answerer": ObjectId(req.query.userId)  
+			// 	}
+			// },
+			{ $project : { 
+				content: "$answers.content",
+				credit: "$answers.credit",
+				createdAt: "$answers.createdAt",
+				"_id": 0,
+				"title": 1,
+				"tag": 1, 
+			}},
+			{ $sort : sortVariable },
+			{ $skip: start },
+			{ $limit : size }
+
+		]
+	).exec();
+	
+	// const answers = await Question.find(query)
+	//   .lean()
+	//   .sort(sortVariable)
+	//   .skip(start)
+	//   .limit(size)
+	//   .populate({
+	// 	path: 'asker',
+	// 	select:
+	// 	  '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+	//   })
+	//   .populate({
+	// 	path: 'answers.answerer',
+	// 	select:
+	// 	  '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+	//   })
+	//   .exec();
+		
+	answers.forEach(( element, index ) => {
+	  element.index = start + index;
+	});
+  
+	res.status(200).json({
+	  err: null,
+	  msg: 'Questions retrieved successfully.',
+	  data: {
+		totalAnswers,
+		answerTags,
+		answers,
+	  },
+	});
+};
+
+

@@ -272,7 +272,7 @@ module.exports.getUserDataByuserId = async (req, res) => {
 
 module.exports.getUserAnswerByuserId = async (req, res) => {
   if (!Validations.isObjectId(req.query.userId)) {
-    return res.status(422).json({
+    return res.status(200).json({
       err: null,
       msg: 'userId parameter must be a valid ObjectId.',
       data: null,

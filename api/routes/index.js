@@ -215,7 +215,13 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.changeDefaultCredits),
 );
-
+// ------------Answer------------
+router.get(
+	'/admin/getAnswers',
+	isAuthenticated,
+	isAdmin,
+	errorHandler(adminCtrl.getAnswers)
+);
 // ----------------------------------User-------------------------------------
 router.patch(
   '/user/updateProfile',
