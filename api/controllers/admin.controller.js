@@ -979,36 +979,52 @@ module.exports.getAnswers = async (req, res) => {
 		[
 			{ $match: query },
 			{ $unwind : "$answers" },
+      {
+        $lookup:{
+          from: "users",
+          localField: "answers.answerer",
+          foreignField: "_id",
+          as: "answerer"
+        }
+      },
+      {
+        $lookup:{
+          from: "users",
+          localField: "asker",
+          foreignField: "_id",
+          as: "asker"
+        }
+      },
 			{ $project : { 
 				content: "$answers.content",
-				credit: "$answers.credit",
+        credit: "$answers.credit",
+				answerer: { $arrayElemAt: [ "$answerer", 0 ] },
+				asker: { $arrayElemAt: [ "$asker", 0 ] },
 				createdAt: "$answers.createdAt",
 				"_id": 0,
 				"title": 1,
 				"tag": 1, 
-			}},
+				
+      }},
+      {
+        $project: {
+          "answerer.password" : 0,
+          "answerer.resetPasswordToken" : 0,
+          "answerer.resetPasswordTokenExpiry" : 0,
+          "answerer.verificationToken" : 0,
+          "answerer.verificationTokenExpiry" : 0,
+          "asker.password" : 0,
+          "asker.resetPasswordToken" : 0,
+          "asker.resetPasswordTokenExpiry" : 0,
+          "asker.verificationToken" : 0,
+          "asker.verificationTokenExpiry" : 0,
+        }
+      },
 			{ $sort : sortVariable },
 			{ $skip: start },
 			{ $limit : size } 
 		]
-	).exec();
-	
-	// const answers = await Question.find(query)
-	//   .lean()
-	//   .sort(sortVariable)
-	//   .skip(start)
-	//   .limit(size)
-	//   .populate({
-	// 	path: 'asker',
-	// 	select:
-	// 	  '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-	//   })
-	//   .populate({
-	// 	path: 'answers.answerer',
-	// 	select:
-	// 	  '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-	//   })
-	//   .exec();
+  ).exec();
     
 	answers.forEach(( element, index ) => {
 	  element.index = start + index;
