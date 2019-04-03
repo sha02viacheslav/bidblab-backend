@@ -1016,20 +1016,20 @@ module.exports.getAnswers = async (req, res) => {
 				"tag": 1, 
 				
       }},
-      // {
-      //   $project: {
-          // "answerer.password" : 0,
+      {
+        $project: {
+          "answerer.password" : 0,
           // "answerer.resetPasswordToken" : 0,
           // "answerer.resetPasswordTokenExpiry" : 0,
           // "answerer.verificationToken" : 0,
           // "answerer.verificationTokenExpiry" : 0,
-          // "asker.password" : 0,
+          "asker.password" : 0,
           // "asker.resetPasswordToken" : 0,
           // "asker.resetPasswordTokenExpiry" : 0,
           // "asker.verificationToken" : 0,
           // "asker.verificationTokenExpiry" : 0,
-      //   }
-      // },
+        }
+      },
 			{ $sort : sortVariable },
 			{ $skip: start },
 			{ $limit : size } 
