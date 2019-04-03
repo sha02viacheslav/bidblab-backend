@@ -962,6 +962,7 @@ module.exports.getAnswers = async (req, res) => {
 	start = totalAnswers <= start? 0 : start;
 
 	let answerTags = await Question.aggregate([
+		{ $unwind : "$answers" },
 		{
 			$group: { _id: "$tag" }
 		},
