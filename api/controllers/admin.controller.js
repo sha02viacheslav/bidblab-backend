@@ -1007,8 +1007,8 @@ module.exports.getAnswers = async (req, res) => {
 				"tag": 1, 
 				
       }},
-      {
-        $project: {
+      // {
+      //   $project: {
           // "answerer.password" : 0,
           // "answerer.resetPasswordToken" : 0,
           // "answerer.resetPasswordTokenExpiry" : 0,
@@ -1019,8 +1019,8 @@ module.exports.getAnswers = async (req, res) => {
           // "asker.resetPasswordTokenExpiry" : 0,
           // "asker.verificationToken" : 0,
           // "asker.verificationTokenExpiry" : 0,
-        }
-      },
+      //   }
+      // },
 			{ $sort : sortVariable },
 			{ $skip: start },
 			{ $limit : size } 
