@@ -11,6 +11,7 @@ const Question = mongoose.model('Question');
 const User = mongoose.model('User');
 const Report = mongoose.model('Report');
 const Interest = mongoose.model('Interest');
+const Credit = mongoose.model('Credit');
 
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -154,7 +155,7 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
         select:
           '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
       })
-      .exec(),
+	  .exec(),
   ]);
   const count = resolvedPromises[0];
   const questions = resolvedPromises[1];
@@ -163,7 +164,7 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
     msg: 'Questions retrieved successfully.',
     data: {
       count,
-      questions,
+	  questions,
     },
   });
 };
@@ -789,6 +790,11 @@ module.exports.addQuestion = async (req, res) => {
     ? null
     : req.decodedToken.user._id;
   result.value.credit = 5;
+  const defaultCredits = await Credit.find({ dataType: "credit"})
+  .exec();
+  if(defaultCredits[0] && defaultCredits[0].defaultQuestionCredit){
+    result.value.credit = defaultCredits[0].defaultQuestionCredit;
+  }
   let newQuestion = await Question.create(result.value);
   newQuestion = await Question.findById(newQuestion._id)
     .lean()
@@ -811,74 +817,86 @@ module.exports.addQuestion = async (req, res) => {
 };
 
 module.exports.addAnswer = async (req, res) => {
-  if (!Validations.isObjectId(req.params.questionId)) {
-    return res.status(422).json({
-      err: null,
-      msg: 'questionId parameter must be a valid ObjectId.',
-      data: null,
-    });
-  }
-  const schema = joi
-    .object({
-      content: joi
-        .string()
-        .trim()
-        .max(500)
-        .required(),
-    })
-    .options({
-      stripUnknown: true,
-    });
-  const result = schema.validate(req.body);
-  if (result.error) {
-    return res.status(422).json({
-      msg: result.error.details[0].message,
-      err: null,
-      data: null,
-    });
-  }
-  const question = await Question.findById(req.params.questionId).exec();
-  if (!question) {
-    return res
-      .status(404)
-      .json({ err: null, msg: 'Question not found.', data: null });
-  }
-  if (question.asker && question.asker == req.decodedToken.user._id) {
-    return res.status(403).json({
-      err: null,
-      msg: 'You can not answer a question you asked.',
-      data: null,
-    });
-  }
-  const alreadyAnswered = question.answers.some(
-    answer => answer.answerer == req.decodedToken.user._id,
-  );
-  if (alreadyAnswered && !req.decodedToken.admin) {
-    return res.status(403).json({
-      err: null,
-      msg: 'You have already answered this question.',
-      data: null,
-    });
-  }
-  result.value.answerer = req.decodedToken.admin
-    ? null
-    : req.decodedToken.user._id;
-  result.value.answertype = req.params.answertype;
-  result.value.credit = result.value.answertype == 'public'
-    ? 8
-    : 4;
-  let answer = question.answers.create(result.value);
-  question.answers.push(answer);
-  await question.save();
-  if (!req.decodedToken.admin) {
-    answer = answer.toObject();
-    answer.answerer = req.decodedToken.user;
-  }
-  res.status(200).json({
-    err: null,
-    msg: 'Answer was added successfully.',
-    data: answer,
-  });
+	if (!Validations.isObjectId(req.params.questionId)) {
+		return res.status(200).json({
+		err: 'questionId parameter must be a valid ObjectId.',
+		msg: null,
+		data: null,
+		});
+	}
+	const schema = joi
+		.object({
+		content: joi
+			.string()
+			.trim()
+			.max(500)
+			.required(),
+		})
+		.options({
+		stripUnknown: true,
+		});
+	const result = schema.validate(req.body);
+	if (result.error) {
+		return res.status(200).json({
+		msg: result.error.details[0].message,
+		err: null,
+		data: null,
+		});
+	}
+	const question = await Question.findById(req.params.questionId).exec();
+	if (!question) {
+		return res
+		.status(200)
+		.json({ err: null, msg: 'Question not found.', data: null });
+	}
+	if (question.asker && question.asker == req.decodedToken.user._id) {
+		return res.status(200).json({
+		err: null,
+		msg: 'You can not answer a question you asked.',
+		data: null,
+		});
+	}
+	const alreadyAnswered = question.answers.some(
+		answer => answer.answerer == req.decodedToken.user._id,
+	);
+	if (alreadyAnswered && !req.decodedToken.admin) {
+		return res.status(200).json({
+		err: null,
+		msg: 'You have already answered this question.',
+		data: null,
+		});
+	}
+	result.value.answerer = req.decodedToken.admin
+		? null
+		: req.decodedToken.user._id;
+	result.value.answertype = req.params.answertype;
+	const defaultCredits = await Credit.find({ dataType: "credit"}).exec();
+	if (result.value.answertype == 'public') {
+		if (defaultCredits[0] && defaultCredits[0].defaultPublicAnswerCredit) {
+			result.value.credit = defaultCredits[0].defaultPublicAnswerCredit;
+		} else {
+			result.value.credit = 8;
+		}
+	} else {
+		if (defaultCredits[0] && defaultCredits[0].defaultPrivateAnswerCredit) {
+			result.value.credit = defaultCredits[0].defaultPrivateAnswerCredit;
+		} else {
+			result.value.credit = 4;
+		}
+	}
+  
+	let answer = question.answers.create(result.value);
+	question.answers.push(answer);
+	await question.save();
+	if (!req.decodedToken.admin) {
+		answer = answer.toObject();
+		answer.answerer = req.decodedToken.user;
+	}
+	res.status(200).json({
+		err: null,
+		msg: 'Answer was added successfully.',
+		data: answer,
+	});
 };
 
 module.exports.changeQuestionPicture = async (req, res) => {
@@ -1389,4 +1407,21 @@ module.exports.getStandardInterests  = async (req, res) => {
     msg: 'StandardInterests was found successfully.',
     data: standardInterests[0].interests,
   });
+}
+
+module.exports.getDefaultCredits  = async (req, res) => {
+	const defaultCredits = await Credit.find({ dataType: "credit"}).exec();
+	if (!defaultCredits) {
+		res.status(200).json({
+			err: null,
+			msg: 'DefaultCredits was not found.',
+			data: null,
+		});
+	}
+
+	res.status(200).json({
+		err: null,
+		msg: 'DefaultCredits was found successfully.',
+		data: defaultCredits[0],
+	});
 }

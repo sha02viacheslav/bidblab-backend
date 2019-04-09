@@ -324,6 +324,11 @@ router.get(
   '/common/getStandardInterests',
   errorHandler(commonCtrl.getStandardInterests),
 );
+router.get(
+  '/common/getDefaultCredits',
+  isAuthenticated,
+  errorHandler(commonCtrl.getDefaultCredits),
+);
 
 // -----------------------------------File-------------------------------------
 router.get(
