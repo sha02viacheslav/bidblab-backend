@@ -329,7 +329,7 @@ router.get(
   isAuthenticated,
   errorHandler(commonCtrl.getDefaultCredits),
 );
-
+router.get('/common/getAuctions', errorHandler(commonCtrl.getAuctions));
 // -----------------------------------File-------------------------------------
 router.get(
   '/file/:parentFolder/:subFolder/:fileName',

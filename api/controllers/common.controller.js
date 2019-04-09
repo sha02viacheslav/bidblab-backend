@@ -12,6 +12,7 @@ const User = mongoose.model('User');
 const Report = mongoose.model('Report');
 const Interest = mongoose.model('Interest');
 const Credit = mongoose.model('Credit');
+const Auction = mongoose.model('Auction');
 
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -1425,3 +1426,79 @@ module.exports.getDefaultCredits  = async (req, res) => {
 		data: defaultCredits[0],
 	});
 }
+
+module.exports.getAuctions = async (req, res) => {
+	// const { offset = 0, limit = 10, search } = req.query;
+	// const query = search
+	//   ? {
+	// 	$or: [
+	// 	  {
+	// 		title: {
+	// 		  $regex: search,
+	// 		  $options: 'i',
+	// 		},
+	// 	  },
+		  // {
+		  //   tag: {
+		  //     $regex: search,
+		  //     $options: 'i',
+		  //   },
+		  // },
+	// 	],
+	//   }
+	//   : {};
+  
+	// const start = Number(limit) * Number(offset);
+	// const size = Number(limit);
+  
+	const resolvedPromises = await Promise.all([
+	  Auction.count().exec(),
+	  Auction.find()
+		// .lean()
+		// .skip(start)
+		// .limit(size)
+		.populate({
+		  path: 'auctioner',
+		  select:
+			'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+		})
+		.populate({
+		  path: 'bids.bider',
+		  select:
+			'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+		})
+		.exec(),
+		
+	]);
+  
+	const count = resolvedPromises[0];
+	const auctions = resolvedPromises[1];
+  
+	// auctions.forEach(question => {
+	//   question.answers.sort((a,b) => {
+	// 	const a_thumbupcnt = a.thumbupcnt? a.thumbupcnt : 0;
+	// 	const b_thumbupcnt = b.thumbupcnt? b.thumbupcnt : 0;
+	// 	const a_thumbdowncnt = a.thumbdowncnt? a.thumbdowncnt : 0;
+	// 	const b_thumbdowncnt = b.thumbdowncnt? b.thumbdowncnt : 0;
+	// 	const temp1 = a_thumbupcnt - a_thumbdowncnt;
+	// 	const temp2 = b_thumbupcnt - b_thumbdowncnt;
+	// 	return temp2 - temp1;
+	//   }),
+	//   question.answers.forEach(function(item, index) {
+	// 	if(index != 0){
+		  // item.remove();
+	// 	}
+	//   })
+	//   removeProfileOfPrivate(question);
+	// });
+  
+  
+	res.status(200).json({
+	  err: null,
+	  msg: 'Auctions retrieved successfully.',
+	  data: {
+		count,
+		auctions,
+	  },
+	});
+  };
