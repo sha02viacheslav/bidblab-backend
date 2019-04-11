@@ -508,94 +508,27 @@ module.exports.getQuestionsByAskerId = async (req, res) => {
 
 module.exports.getMyCredits = async (req, res) => {
   if (!Validations.isObjectId(req.decodedToken.user._id)) {
-    return res.status(422).json({
+    return res.status(200).json({
       err: null,
       msg: 'userId parameter must be a valid ObjectId.',
       data: null,
     });
   }
   
-  let question = await Question.aggregate(
-    [
-      { 
-        $match: {
-          "asker": ObjectId(req.decodedToken.user._id)   
-        }
-      },
-      {
-        $group: {
-          _id: "null", 
-          count: {
-            $sum: "$credit"
-          }
-        }
-      }
-    ]
-  )
-  .exec();
-  let question_credits = 0;
-  if(question){
-    if(question[0]){
-      if(question[0].count){
-        question_credits = question[0].count;
-      }
-    }
+  let credits = await module.exports.internalGetMyCredits(req, res);
+  if(!credits){
+    return res.status(200).json({
+      err: null,
+      msg: 'Credits was not found.',
+      data: null,
+    });
   }
-  
-  question = await Question.aggregate(
-    [
-      { 
-        $match: { 
-          "answers":{
-            "$elemMatch": {
-              "answerer": ObjectId(req.decodedToken.user._id)
-            }
-          }   
-        }
-      },
-      { $unwind : "$answers" },
-      { 
-        $match: { 
-          "answers.answerer": ObjectId(req.decodedToken.user._id)  
-        }
-      },
-      { $project : { "answers" : 1, "_id": 0 } },
-      {
-        $group: {
-          _id: "null", 
-          count: {
-            $sum: "$answers.credit"
-          }
-        }
-      }
-    ]
-  )
-  .exec();
-  let answer_credits = 0;
-  if(question){
-    if(question[0]){
-      if(question[0].count){
-        answer_credits = question[0].count;
-      }
-    }
-  }
-  let referal_credits = 0;
-  if(question){
-    if(question[1]){
-      if(question[0].count){
-        referal_credits = question[0].count;
-      }
-    }
-  }
-
 
   res.status(200).json({
     err: null,
     msg: 'Questions retrieved successfully.',
     data: {
-      question_credits,
-      answer_credits,
-      referal_credits,
+      credits
     },
   });
 };
@@ -1502,3 +1435,186 @@ module.exports.getAuctions = async (req, res) => {
 	  },
 	});
   };
+
+module.exports.addBid = async (req, res) => {
+  if (!Validations.isObjectId(req.params.auctionId)) {
+    return res.status(200).json({
+      err: 'AuctionId parameter must be a valid ObjectId.',
+      msg: null,
+      data: null,
+    });
+  }
+  const schema = joi
+    .object({
+    bidPrice: joi
+      .number()
+      .max(500)
+      .required(),
+    })
+    .options({
+    stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(200).json({
+    msg: result.error.details[0].message,
+    err: null,
+    data: null,
+    });
+  }
+  const auction = await Auction.findById(req.params.auctionId).exec();
+  if (!auction) {
+    return res
+    .status(200)
+    .json({ err: null, msg: 'Auction was not found.', data: null });
+  }
+  if (auction.auctioner && auction.auctioner == req.decodedToken.user._id) {
+    return res.status(200).json({
+      err: null,
+      msg: 'You can not bid a auction you submitted.',
+      data: null,
+    });
+  }
+
+  let credits = await module.exports.internalGetMyCredits(req, res);
+  if (auction.bidFee > credits.answerCredits + credits.questionCredits + credits.referalCredits - credits.loseCredits) {
+    return res.status(200).json({
+      err: null,
+      msg: 'You need more BidBlab Credits to continue bidding!',
+      data: null,
+    });
+  }
+  result.value.bider = req.decodedToken.admin
+    ? null
+    : req.decodedToken.user._id;
+  
+  let bid = auction.bids.create(result.value);
+  auction.bids.push(bid);
+  await auction.save();
+  if (!req.decodedToken.admin) {
+    bid = bid.toObject();
+    bid.bider = req.decodedToken.user;
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Bid was added successfully.',
+    data: {
+      bid
+    }
+  });
+
+};
+
+module.exports.internalGetMyCredits = async (req, res) => {
+
+  if (!Validations.isObjectId(req.decodedToken.user._id)) {
+    return data = { };
+  }
+  
+  let question = await Question.aggregate(
+    [
+      { 
+        $match: {
+          "asker": ObjectId(req.decodedToken.user._id)   
+        }
+      },
+      {
+        $group: {
+          _id: "null", 
+          count: {
+            $sum: "$credit"
+          }
+        }
+      }
+    ]
+  )
+  .exec();
+  let questionCredits = 0;
+  if(question && question[0] && question[0].count){
+    questionCredits = question[0].count;
+  }
+  
+  question = await Question.aggregate(
+    [
+      { 
+        $match: { 
+          "answers":{
+            "$elemMatch": {
+              "answerer": ObjectId(req.decodedToken.user._id)
+            }
+          }   
+        }
+      },
+      { $unwind : "$answers" },
+      { 
+        $match: { "answers.answerer": ObjectId(req.decodedToken.user._id) }
+      },
+      { $project : { "answers" : 1, "_id": 0 } },
+      {
+        $group: {
+          _id: "null", 
+          count: { $sum: "$answers.credit" }
+        }
+      }
+    ]
+  )
+  .exec();
+  let answerCredits = 0;
+  if(question && question[0] && question[0].count){
+    answerCredits = question[0].count;
+  }
+  let referalCredits = 0;
+  if(question){
+    if(question[1]){
+      if(question[0].count){
+        referalCredits = question[0].count;
+      }
+    }
+  }
+
+  let auction = await Auction.aggregate(
+    [
+      { 
+        $match: { 
+          "bids":{
+            "$elemMatch": {
+              "bider": ObjectId(req.decodedToken.user._id)
+            }
+          }   
+        }
+      },
+      { $unwind : "$bids" },
+      { 
+        $match: { 
+          "bids.bider": ObjectId(req.decodedToken.user._id)  
+        }
+      },
+      { $project : { "bids" : 1, "bidFee" : 1, "_id": 0 } },
+      {
+        $group: {
+          _id: "null", 
+          count: {
+            $sum: "$bidFee"
+          }
+        }
+      }
+    ]
+  )
+  .exec();
+  let loseCredits = 0;
+  if(auction){
+    if(auction[0]){
+      if(auction[0].count){
+        loseCredits = auction[0].count;
+      }
+    }
+  }
+
+  return data = {
+    questionCredits,
+    answerCredits,
+    referalCredits,
+    loseCredits,
+  };
+
+}

@@ -330,6 +330,11 @@ router.get(
   errorHandler(commonCtrl.getDefaultCredits),
 );
 router.get('/common/getAuctions', errorHandler(commonCtrl.getAuctions));
+router.post(
+  '/common/addBid/:auctionId',
+  isAuthenticated,
+  errorHandler(commonCtrl.addBid),
+);
 // -----------------------------------File-------------------------------------
 router.get(
   '/file/:parentFolder/:subFolder/:fileName',
