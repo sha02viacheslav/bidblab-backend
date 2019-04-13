@@ -248,14 +248,17 @@ router.get(
 );
 router.get(
   '/common/getUserDataByuserId/:userId',
+  isAuthenticated,
   errorHandler(commonCtrl.getUserDataByuserId),
 );
 router.get(
   '/common/getUserAnswerByuserId',
+  isAuthenticated,
   errorHandler(commonCtrl.getUserAnswerByuserId),
 );
 router.get(
   '/common/getUserQuestionByuserId',
+  isAuthenticated,
   errorHandler(commonCtrl.getUserQuestionByuserId),
 );
 router.get(
@@ -329,7 +332,10 @@ router.get(
   isAuthenticated,
   errorHandler(commonCtrl.getDefaultCredits),
 );
-router.get('/common/getAuctions', errorHandler(commonCtrl.getAuctions));
+router.get('/common/getAuctions', 
+  isAuthenticated,
+  errorHandler(commonCtrl.getAuctions)
+);
 router.post(
   '/common/addBid/:auctionId',
   isAuthenticated,

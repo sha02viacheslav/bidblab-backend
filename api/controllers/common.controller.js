@@ -1406,24 +1406,16 @@ module.exports.getAuctions = async (req, res) => {
   
 	const count = resolvedPromises[0];
 	const auctions = resolvedPromises[1];
-  
-	// auctions.forEach(question => {
-	//   question.answers.sort((a,b) => {
-	// 	const a_thumbupcnt = a.thumbupcnt? a.thumbupcnt : 0;
-	// 	const b_thumbupcnt = b.thumbupcnt? b.thumbupcnt : 0;
-	// 	const a_thumbdowncnt = a.thumbdowncnt? a.thumbdowncnt : 0;
-	// 	const b_thumbdowncnt = b.thumbdowncnt? b.thumbdowncnt : 0;
-	// 	const temp1 = a_thumbupcnt - a_thumbdowncnt;
-	// 	const temp2 = b_thumbupcnt - b_thumbdowncnt;
-	// 	return temp2 - temp1;
-	//   }),
-	//   question.answers.forEach(function(item, index) {
-	// 	if(index != 0){
-		  // item.remove();
-	// 	}
-	//   })
-	//   removeProfileOfPrivate(question);
-	// });
+	auctions.forEach(auction => {
+    for (index = auction.bids.length - 1; index >= 0; index--) {
+      if((auction.bids[index].bider._id) != (req.decodedToken.user._id)){
+        auction.bids[index].remove();
+      }
+    }
+	  auction.bids.sort((a, b) => {
+      return a.createdAt - b.createdAt;
+    });
+	});
   
   
 	res.status(200).json({
@@ -1492,14 +1484,14 @@ module.exports.addBid = async (req, res) => {
   auction.bids.push(bid);
   await auction.save();
   if (!req.decodedToken.admin) {
-    bid = bid.toObject();
-    bid.bider = req.decodedToken.user;
+    auction.bid = auction.bid.toObject();
+    auction.bid.bider = req.decodedToken.user;
   }
   res.status(200).json({
     err: null,
     msg: 'Bid was added successfully.',
     data: {
-      bid
+      auction
     }
   });
 
