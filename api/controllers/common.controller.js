@@ -1387,8 +1387,6 @@ module.exports.getAuctions = async (req, res) => {
   const totalAuctionsCount = await Auction.count().exec();
   const auctions = await  Auction.find()
    .lean()
-  // .skip(start)
-  // .limit(size)
   .populate({
     path: 'auctioner',
     select:
@@ -1418,9 +1416,6 @@ module.exports.getAuctions = async (req, res) => {
         }
       }
     }
-	  // auction.bids.sort((a, b) => {
-    //   return a.createdAt - b.createdAt;
-    // });
   });
   
 	res.status(200).json({
