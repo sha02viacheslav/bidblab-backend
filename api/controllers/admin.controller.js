@@ -574,6 +574,7 @@ module.exports.getQuestions = async (req, res) => {
       
   questions.forEach(( element, index ) => {
     element.index = start + index;
+    element.sdsdsd = "sdsdsdsd";
   });
 
   res.status(200).json({

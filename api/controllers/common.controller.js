@@ -1384,49 +1384,55 @@ module.exports.getAuctions = async (req, res) => {
 	// const start = Number(limit) * Number(offset);
 	// const size = Number(limit);
   
-	const resolvedPromises = await Promise.all([
-	  Auction.count().exec(),
-	  Auction.find()
-		// .lean()
-		// .skip(start)
-		// .limit(size)
-		.populate({
-		  path: 'auctioner',
-		  select:
-			'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-		})
-		.populate({
-		  path: 'bids.bider',
-		  select:
-			'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-		})
-		.exec(),
-		
-	]);
-  
-	const count = resolvedPromises[0];
-	const auctions = resolvedPromises[1];
-	auctions.forEach(auction => {
-    for (index = auction.bids.length - 1; index >= 0; index--) {
-      if((auction.bids[index].bider._id) != (req.decodedToken.user._id)){
-        auction.bids[index].remove();
+  const totalAuctionsCount = await Auction.count().exec();
+  const auctions = await  Auction.find()
+   .lean()
+  // .skip(start)
+  // .limit(size)
+  .populate({
+    path: 'auctioner',
+    select:
+    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .populate({
+    path: 'bids.bidder',
+    select:
+    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .exec();
+
+  debugger;
+	auctions.forEach(element => {
+    let tempBids = element.bids;
+    let maxBidPrice = Math.max.apply(Math, tempBids.map(function(o) { return o.bidPrice; }));
+    for (index = element.bids.length - 1; index >= 0; index--) {
+      if((element.bids[index].bidder._id) != (req.decodedToken.user._id)){
+        element.bids.splice(index, 1);
+      }
+      else{
+        element.bids[index].bidStatus = 0;
+        if(tempBids.some( item => item.bidPrice == element.bids[index].bidPrice && item._id != element.bids[index]._id)){
+          element.bids[index].bidStatus = 1<<0;
+        }
+        if(element.bids[index].bidPrice == maxBidPrice){
+          element.bids[index].bidStatus |= 1<<1;
+        }
       }
     }
-	  auction.bids.sort((a, b) => {
-      return a.createdAt - b.createdAt;
-    });
-	});
-  
+	  // auction.bids.sort((a, b) => {
+    //   return a.createdAt - b.createdAt;
+    // });
+  });
   
 	res.status(200).json({
 	  err: null,
 	  msg: 'Auctions retrieved successfully.',
 	  data: {
-		count,
-		auctions,
+      totalAuctionsCount,
+      auctions,
 	  },
 	});
-  };
+};
 
 module.exports.addBid = async (req, res) => {
   if (!Validations.isObjectId(req.params.auctionId)) {
@@ -1476,7 +1482,7 @@ module.exports.addBid = async (req, res) => {
       data: null,
     });
   }
-  result.value.bider = req.decodedToken.admin
+  result.value.bidder = req.decodedToken.admin
     ? null
     : req.decodedToken.user._id;
   
@@ -1485,7 +1491,7 @@ module.exports.addBid = async (req, res) => {
   await auction.save();
   if (!req.decodedToken.admin) {
     auction.bid = auction.bid.toObject();
-    auction.bid.bider = req.decodedToken.user;
+    auction.bid.bidder = req.decodedToken.user;
   }
   res.status(200).json({
     err: null,
@@ -1570,7 +1576,7 @@ module.exports.internalGetMyCredits = async (req, res) => {
         $match: { 
           "bids":{
             "$elemMatch": {
-              "bider": ObjectId(req.decodedToken.user._id)
+              "bidder": ObjectId(req.decodedToken.user._id)
             }
           }   
         }
@@ -1578,7 +1584,7 @@ module.exports.internalGetMyCredits = async (req, res) => {
       { $unwind : "$bids" },
       { 
         $match: { 
-          "bids.bider": ObjectId(req.decodedToken.user._id)  
+          "bids.bidder": ObjectId(req.decodedToken.user._id)  
         }
       },
       { $project : { "bids" : 1, "bidFee" : 1, "_id": 0 } },

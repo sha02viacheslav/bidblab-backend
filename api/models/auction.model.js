@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const bidSchema = mongoose.Schema({
-    bider: {
+    bidder: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: 'User',
     },
