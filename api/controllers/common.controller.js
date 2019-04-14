@@ -1401,7 +1401,6 @@ module.exports.getAuctions = async (req, res) => {
   })
   .exec();
 
-  debugger;
 	auctions.forEach(element => {
     let tempBids = element.bids;
     let maxBidPrice = Math.max.apply(Math, tempBids.map(function(o) { return o.bidPrice; }));
