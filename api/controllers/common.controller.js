@@ -1484,8 +1484,8 @@ module.exports.addBid = async (req, res) => {
   auction.bids.push(bid);
   await auction.save();
   if (!req.decodedToken.admin) {
-    auction.bid = auction.bid.toObject();
-    auction.bid.bidder = req.decodedToken.user;
+    auction.bids = auction.bids.toObject();
+    auction.bids.bidder = req.decodedToken.user;
   }
   res.status(200).json({
     err: null,
