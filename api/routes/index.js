@@ -204,6 +204,37 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.changeFlagsRole),
 );
+// ------------Auction------------
+router.get(
+  '/admin/getPendingAuctions',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getPendingAuctions)
+);
+router.get(
+  '/admin/getProcessAuctions',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getProcessAuctions)
+);
+router.get(
+  '/admin/getClosedAuctions',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getClosedAuctions)
+);
+router.post(
+  '/admin/deleteAuctions',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.deleteAuctions),
+);
+router.post(
+  '/admin/changeAuctionsRole/:roleType',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.changeAuctionsRole),
+);
 // ------------User------------
 router.get(
   '/admin/getUser/:userId',

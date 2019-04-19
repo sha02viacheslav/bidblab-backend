@@ -9,6 +9,7 @@ const Question = mongoose.model('Question');
 const Credit = mongoose.model('Credit');
 const Interest = mongoose.model('Interest');
 const Report = mongoose.model('Report');
+const Auction = mongoose.model('Auction');
 
 const ObjectId = mongoose.Types.ObjectId;
 module.exports.createUser = async (req, res) => {
@@ -575,7 +576,6 @@ module.exports.getQuestions = async (req, res) => {
       
   questions.forEach(( element, index ) => {
     element.index = start + index;
-    element.sdsdsd = "sdsdsdsd";
   });
 
   res.status(200).json({
@@ -1256,4 +1256,302 @@ module.exports.deleteFlags = async (req, res) => {
   });
 };
 
+module.exports.getPendingAuctions = async (req, res) => {
+  let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  filterTags = filterTags.trim();
+  let tagFilterFlag = false;
+  if(filterTags){
+    tagFilterFlag = true;
+  }
+  let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
+  const query = 
+    {
+      $and: [
+        search?
+        {
+          productName: {
+            $regex: search,
+            $options: 'i',
+          },
+        }:{},
+        {
+          starts: { 
+            "$gt": new Date(),
+          }, 
+        },
+        // {
+        //   closes: { 
+        //     "$lt": new Date(),
+        //   }, 
+        // }
+        // tagFilterFlag?{
+        //     "tag": { "$in": interestArray }
+        // }:{},
+      ],
+    };
+  
+  var sortVariable = {};
+  if(direction == 'asc'){
+    sortVariable[active] = 1;
+  }
+  else if(direction == 'desc'){
+    sortVariable[active] = -1;
+  }
+  else{
+    sortVariable['createdAt'] = -1;
+  }
+  let start = Number(limit) * Number(offset);
+  const size = Number(limit);
+
+  const totalAuctions = await  Auction.count(query).exec();
+  if(totalAuctions <= start){
+    start = 0;
+  }
+  const auctions = await Auction.find(query)
+    .lean()
+    .sort(sortVariable)
+    .skip(start)
+    .limit(size)
+    .exec();
+      
+  auctions.forEach(( element, index ) => {
+    element.index = start + index;
+  });
+
+  res.status(200).json({
+    err: null,
+    msg: 'Auctions retrieved successfully.',
+    data: {
+      totalAuctions,
+      auctions,
+    },
+  });
+};
+
+module.exports.getProcessAuctions = async (req, res) => {
+  let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  filterTags = filterTags.trim();
+  let tagFilterFlag = false;
+  if(filterTags){
+    tagFilterFlag = true;
+  }
+  let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
+  const query = 
+    {
+      $and: [
+        search?
+        {
+          productName: {
+            $regex: search,
+            $options: 'i',
+          },
+        }:{},
+        {
+          starts: { 
+            "$lte": new Date(),
+          }, 
+        },
+        {
+          closes: { 
+            "$gt": new Date(),
+          }, 
+        }
+        // tagFilterFlag?{
+        //     "tag": { "$in": interestArray }
+        // }:{},
+      ],
+    };
+  
+  var sortVariable = {};
+  if(direction == 'asc'){
+    sortVariable[active] = 1;
+  }
+  else if(direction == 'desc'){
+    sortVariable[active] = -1;
+  }
+  else{
+    sortVariable['createdAt'] = -1;
+  }
+  let start = Number(limit) * Number(offset);
+  const size = Number(limit);
+
+  const totalAuctions = await  Auction.count(query).exec();
+  if(totalAuctions <= start){
+    start = 0;
+  }
+  const auctions = await Auction.find(query)
+    .lean()
+    .sort(sortVariable)
+    .skip(start)
+    .limit(size)
+    .exec();
+   
+  auctions.forEach((element, key) => {
+    element.index = start + key;
+    let tempBids = element.bids;
+    let maxUniqueBid = '';
+    for (index = element.bids.length - 1; index >= 0; index--) {
+      element.bids[index].bidStatus = 0;
+      if(tempBids.some( item => item.bidPrice == element.bids[index].bidPrice && item._id != element.bids[index]._id)){
+        element.bids[index].bidStatus = 1<<0;
+      }
+      else{
+        // uniqueBids.push(element.element.bids[index]);
+        if(!maxUniqueBid || maxUniqueBid.bidPrice < element.bids[index].bidPrice){
+          maxUniqueBid = element.bids[index];
+        }
+      }
+    }
+    element.maxUniqueBid = maxUniqueBid;
+  });
+
+  res.status(200).json({
+    err: null,
+    msg: 'Auctions retrieved successfully.',
+    data: {
+      totalAuctions,
+      auctions,
+    },
+  });
+};
+
+module.exports.getClosedAuctions = async (req, res) => {
+  let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  filterTags = filterTags.trim();
+  let tagFilterFlag = false;
+  if(filterTags){
+    tagFilterFlag = true;
+  }
+  let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
+  const query = 
+    {
+      $and: [
+        search?
+        {
+          productName: {
+            $regex: search,
+            $options: 'i',
+          },
+        }:{},
+        {
+          starts: { 
+            "$lte": new Date(),
+          }, 
+        },
+        {
+          closes: { 
+            "$gt": new Date(),
+          }, 
+        }
+        // tagFilterFlag?{
+        //     "tag": { "$in": interestArray }
+        // }:{},
+      ],
+    };
+  
+  var sortVariable = {};
+  if(direction == 'asc'){
+    sortVariable[active] = 1;
+  }
+  else if(direction == 'desc'){
+    sortVariable[active] = -1;
+  }
+  else{
+    sortVariable['createdAt'] = -1;
+  }
+  let start = Number(limit) * Number(offset);
+  const size = Number(limit);
+
+  const totalAuctions = await  Auction.count(query).exec();
+  if(totalAuctions <= start){
+    start = 0;
+  }
+  const auctions = await Auction.find(query)
+    .lean()
+    .sort(sortVariable)
+    .skip(start)
+    .limit(size)
+    .exec();
+   
+  auctions.forEach((element, key) => {
+    element.index = start + key;
+    let tempBids = element.bids;
+    let maxUniqueBid = '';
+    for (index = element.bids.length - 1; index >= 0; index--) {
+      element.bids[index].bidStatus = 0;
+      if(tempBids.some( item => item.bidPrice == element.bids[index].bidPrice && item._id != element.bids[index]._id)){
+        element.bids[index].bidStatus = 1<<0;
+      }
+      else{
+        // uniqueBids.push(element.element.bids[index]);
+        if(!maxUniqueBid || maxUniqueBid.bidPrice < element.bids[index].bidPrice){
+          maxUniqueBid = element.bids[index];
+        }
+      }
+    }
+    element.maxUniqueBid = maxUniqueBid;
+  });
+
+  res.status(200).json({
+    err: null,
+    msg: 'Auctions retrieved successfully.',
+    data: {
+      totalAuctions,
+      auctions,
+    },
+  });
+};
+
+module.exports.changeAuctionsRole = async (req, res) => {
+
+  let suspendedAuctions = [];
+  let totalSuspendAuctions = 0;
+
+  for(let index in req.body){
+    let suspendedAuction = await Auction.findByIdAndUpdate(req.body[index],
+      {
+        $set: {
+          role: req.params.roleType,
+        }
+      }
+    )
+    .exec();
+    if (suspendedAuction) {
+      totalSuspendAuctions++;
+      suspendedAuctions.push(suspendedAuction);
+    }
+  }
+  
+  res.status(200).json({
+    err: null,
+    msg: 'Auctions was suspended successfully.',
+    data: {
+      totalSuspendAuctions,
+      suspendedAuctions
+    },
+  });
+};
+
+module.exports.deleteAuctions = async (req, res) => {
+
+  let deletedAuctions = [];
+  let totalDeleteAuctions = 0;
+
+  for(let index in req.body){
+    let deletedAuction = await Auction.findByIdAndRemove(req.body[index])
+    .exec();
+    if (deletedAuction) {
+      totalDeleteAuctions++;
+      deletedAuctions.push(deletedAuction);
+    }
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Question was deleted successfully.',
+    data: {
+      totalDeleteAuctions,
+      deletedAuctions
+    },
+  });
+};
 
