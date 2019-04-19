@@ -1233,4 +1233,27 @@ module.exports.changeFlagsRole = async (req, res) => {
   });
 };
 
+module.exports.deleteFlags = async (req, res) => {
+
+  let deletedFlags = [];
+  let totalDeleteFlags = 0;
+
+  for(let index in req.body){
+    let deletedFlag = await Report.findByIdAndRemove(req.body[index])
+    .exec();
+    if (deletedFlag) {
+      totalDeleteFlags++;
+      deletedFlags.push(deletedFlag);
+    }
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Question was deleted successfully.',
+    data: {
+      totalDeleteFlags,
+      deletedFlags
+    },
+  });
+};
+
 

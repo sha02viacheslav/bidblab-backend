@@ -193,6 +193,12 @@ router.get(
   errorHandler(adminCtrl.getFlags)
 );
 router.post(
+  '/admin/deleteFlags',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.deleteFlags),
+);
+router.post(
   '/admin/changeFlagsRole/:roleType',
   isAuthenticated,
   isAdmin,
