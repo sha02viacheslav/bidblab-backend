@@ -23,8 +23,16 @@ const reportSchema = mongoose.Schema({
         required: true,
         trim: true,
     },
+    role: {
+      type: String,
+      default: "activate",
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
     updatedAt: Date,
-  });
+});
 
 
 mongoose.model('Report', reportSchema);

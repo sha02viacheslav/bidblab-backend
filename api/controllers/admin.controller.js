@@ -8,6 +8,7 @@ const User = mongoose.model('User');
 const Question = mongoose.model('Question');
 const Credit = mongoose.model('Credit');
 const Interest = mongoose.model('Interest');
+const Report = mongoose.model('Report');
 
 const ObjectId = mongoose.Types.ObjectId;
 module.exports.createUser = async (req, res) => {
@@ -1050,6 +1051,186 @@ module.exports.getAnswers = async (req, res) => {
 			answers,
 		},
 	});
+};
+module.exports.getFlags = async (req, res) => {
+	let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+	filterTags = filterTags.trim();
+	let tagFilterFlag = false;
+	if(filterTags){
+	  	tagFilterFlag = true;
+	}
+	let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
+	const query =	
+		{
+			$and: [
+				search?
+					{
+						reportNote: {
+						$regex: search,
+						$options: 'i',
+						},
+					}: { },
+				tagFilterFlag?
+					{
+						"reportType": { "$in": interestArray }
+					}: { },
+			],
+		}
+	
+	var sortVariable = {};
+	if(direction == 'asc'){
+	  	sortVariable[active] = 1;
+	}
+	else if(direction == 'desc'){
+		sortVariable[active] = -1;
+  }
+  else{
+    sortVariable['createdAt'] = -1;
+  }
+	let totalFlags = await Report.count(query).exec();
+	let start = Number(limit) * Number(offset);
+	const size = Number(limit);
+	start = totalFlags <= start? 0 : start;
+	const flags = await Report.aggregate(
+		[
+			{ $match: query },
+      {
+        $lookup:{
+          from: "questions",
+          localField: "questionId",
+          foreignField: "_id",
+          as: "question"
+        }
+      },
+			{
+			  $project: {
+			    "reportType": 1,
+			    "reportNote": 1,
+          "role": 1,
+			    "answerId": 1,
+			    "reporter": 1,
+			    "createdAt": 1,
+			    "updatedAt": 1,
+			    question: { $arrayElemAt: ["$question", 0] },
+          answers: { $arrayElemAt: ["$question.answers", 0] },
+			  }
+			},
+			{
+			  $project: {
+			    "reportType": 1,
+          "reportNote": 1,
+          "role": 1,
+			    "reporter": 1,
+			    "createdAt": 1,
+			    "updatedAt": 1,
+			    "question": 1,
+          answer: { $arrayElemAt: ["$answers", { "$indexOfArray": [ "$answers._id", "$answerId" ] }] },
+			  }
+			},
+			{
+        $lookup:{
+          from: "users",
+          localField: "reporter",
+          foreignField: "_id",
+          as: "reporter"
+        }
+      },
+      {
+        $lookup:{
+          from: "users",
+          localField: "question.asker",
+          foreignField: "_id",
+          as: "asker"
+        }
+      },
+      {
+        $lookup:{
+          from: "users",
+          localField: "answer.answerer",
+          foreignField: "_id",
+          as: "answerer"
+        }
+      },
+      {
+        $project: {
+          "reportType": 1,
+          "reportNote": 1,
+          "role": 1,
+          "createdAt": 1,
+          "updatedAt": 1,
+          "question": 1,
+          "answer": 1,
+          "reporter": { $arrayElemAt: ["$reporter", 0] },
+          "asker": { $arrayElemAt: ["$asker", 0] },
+          "answerer": { $arrayElemAt: ["$answerer", 0] },
+        }
+			},
+			{
+        $project: {
+          "reporter.password" : 0,
+          "reporter.resetPasswordToken" : 0,
+          "reporter.resetPasswordTokenExpiry" : 0,
+          "reporter.verificationToken" : 0,
+          "reporter.verificationTokenExpiry" : 0,
+          "answerer.password" : 0,
+          "answerer.resetPasswordToken" : 0,
+          "answerer.resetPasswordTokenExpiry" : 0,
+          "answerer.verificationToken" : 0,
+          "answerer.verificationTokenExpiry" : 0,
+          "asker.password" : 0,
+          "asker.resetPasswordToken" : 0,
+          "asker.resetPasswordTokenExpiry" : 0,
+          "asker.verificationToken" : 0,
+          "asker.verificationTokenExpiry" : 0,
+        }
+      },
+			// { $sort : sortVariable },
+			{ $skip: start },
+			{ $limit : size } 
+		]
+  ).exec();
+  console.log(flags);
+	flags.forEach(( element, index ) => {
+	  element.index = start + index;
+	});
+  
+	res.status(200).json({
+		err: null,
+		msg: 'Flags retrieved successfully.',
+		data: {
+			totalFlags,
+			flags,
+		},
+	});
+};
+
+module.exports.changeFlagsRole = async (req, res) => {
+
+  let suspendedFlags = [];
+  let totalSuspendFlags = 0;
+
+  for(let index in req.body){
+    let suspendedFlag = await Report.findByIdAndUpdate(req.body[index],
+      {
+        $set: {
+          role: req.params.roleType,
+        }
+      }
+    )
+    .exec();
+    if (suspendedFlag) {
+      totalSuspendFlags++;
+      suspendedFlags.push(suspendedFlag);
+    }
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Flags was suspended successfully.',
+    data: {
+      totalSuspendFlags,
+      suspendedFlags
+    },
+  });
 };
 
 

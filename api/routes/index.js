@@ -137,23 +137,10 @@ router.post(
 );
 // ------------Question------------
 router.get(
-  '/admin/getUser/:userId',
+  '/admin/getQuestions',
   isAuthenticated,
   isAdmin,
-  errorHandler(adminCtrl.getUser),
-);
-
-router.patch(
-  '/admin/resetUserPassword/:userId',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.resetUserPassword),
-);
-router.post(
-  '/admin/changeMembersRole/:roleType',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.changeMembersRole),
+  errorHandler(adminCtrl.getQuestions)
 );
 router.patch(
   '/admin/updateQuestion/:questionId',
@@ -161,11 +148,30 @@ router.patch(
   isAdmin,
   errorHandler(adminCtrl.updateQuestion),
 );
+router.post(
+  '/admin/deleteQuestions',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.deleteQuestions),
+);
 router.delete(
   '/admin/deleteQuestion/:questionId',
   isAuthenticated,
   isAdmin,
   errorHandler(adminCtrl.deleteQuestion),
+);
+router.post(
+  '/admin/changeQuestionsRole/:roleType',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.changeQuestionsRole),
+);
+// ------------Answer------------
+router.get(
+	'/admin/getAnswers',
+	isAuthenticated,
+	isAdmin,
+	errorHandler(adminCtrl.getAnswers)
 );
 router.patch(
   '/admin/updateAnswer/:questionId/:answerId',
@@ -179,29 +185,43 @@ router.delete(
   isAdmin,
   errorHandler(adminCtrl.deleteAnswer),
 );
+// ------------Flag------------
+router.get(
+  '/admin/getFlags',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getFlags)
+);
+router.post(
+  '/admin/changeFlagsRole/:roleType',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.changeFlagsRole),
+);
+// ------------User------------
+router.get(
+  '/admin/getUser/:userId',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getUser),
+);
+router.patch(
+  '/admin/resetUserPassword/:userId',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.resetUserPassword),
+);
+router.post(
+  '/admin/changeMembersRole/:roleType',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.changeMembersRole),
+);
 router.post(
   '/admin/sendMessage',
   isAuthenticated,
   isAdmin,
   errorHandler(adminCtrl.sendMessage),
-);
-router.get(
-  '/admin/getQuestions',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.getQuestions)
-);
-router.post(
-  '/admin/deleteQuestions',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.deleteQuestions),
-);
-router.post(
-  '/admin/changeQuestionsRole/:roleType',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.changeQuestionsRole),
 );
 router.get(
   '/admin/getDefaultCredits',
@@ -214,13 +234,6 @@ router.post(
   isAuthenticated,
   isAdmin,
   errorHandler(adminCtrl.changeDefaultCredits),
-);
-// ------------Answer------------
-router.get(
-	'/admin/getAnswers',
-	isAuthenticated,
-	isAdmin,
-	errorHandler(adminCtrl.getAnswers)
 );
 // ----------------------------------User-------------------------------------
 router.patch(
