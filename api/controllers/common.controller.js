@@ -1438,13 +1438,13 @@ module.exports.addBid = async (req, res) => {
   }
   const schema = joi
     .object({
-    bidPrice: joi
-      .number()
-      .max(500)
-      .required(),
+      bidPrice: joi
+        .number()
+        .max(500)
+        .required(),
     })
     .options({
-    stripUnknown: true,
+      stripUnknown: true,
     });
   const result = schema.validate(req.body);
   if (result.error) {

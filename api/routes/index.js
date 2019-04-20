@@ -205,6 +205,12 @@ router.post(
   errorHandler(adminCtrl.changeFlagsRole),
 );
 // ------------Auction------------
+router.post(
+  '/admin/addAuction',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.addAuction),
+);
 router.get(
   '/admin/getPendingAuctions',
   isAuthenticated,

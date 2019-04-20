@@ -1256,6 +1256,79 @@ module.exports.deleteFlags = async (req, res) => {
   });
 };
 
+module.exports.addAuction = async (req, res) => {
+  const schema = joi
+    .object({
+      auctionTitle: joi
+        .string()
+        .trim()
+        .max(100)
+        .required(),
+      bidblabPrice: joi
+        .number()
+        .required(),
+      retailPrice: joi
+        .number()
+        .min(Number(req.body.bidblabPrice))
+        .required(),
+      bidFee: joi
+        .number()
+        .required(),
+      starts: joi
+        .date()
+        .required(),
+      closes: joi
+        .date()
+        .min(new Date(req.body.starts))
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(200).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+  // const existingQuestion = await Question.findOne({
+  //   title: {
+  //     $regex: result.value.title,
+  //     $options: 'i',
+  //   },
+  // })
+  //   .lean()
+  //   .exec();
+  // if (existingQuestion) {
+  //   return res.status(200).json({
+  //     err: null,
+  //     msg: 'Question already exists, try a different format or rephrasing.',
+  //     data: null,
+  //   });
+  // }
+  let newAuction = await Auction.create(result.value);
+  // newAuction = await Auction.findById(newAuction._id)
+  //   .lean()
+  //   .populate({
+  //     path: 'asker',
+  //     select:
+  //       '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  //   })
+  //   .populate({
+  //     path: 'answers.answerer',
+  //     select:
+  //       '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  //   })
+  //   .exec();
+  res.status(201).json({
+    err: null,
+    msg: 'Auction was added successfully.',
+    data: newAuction,
+  });
+};
+
 module.exports.getPendingAuctions = async (req, res) => {
   let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
   filterTags = filterTags.trim();
@@ -1434,13 +1507,8 @@ module.exports.getClosedAuctions = async (req, res) => {
           },
         }:{},
         {
-          starts: { 
-            "$lte": new Date(),
-          }, 
-        },
-        {
           closes: { 
-            "$gt": new Date(),
+            "$lt": new Date(),
           }, 
         }
         // tagFilterFlag?{

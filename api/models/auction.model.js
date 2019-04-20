@@ -20,10 +20,15 @@ const bidSchema = mongoose.Schema({
 });
 
 const auctionSchema = mongoose.Schema({
-    auctioner: {
-        type: mongoose.SchemaTypes.ObjectId,
-        ref: 'User',
+    auctionTitle: {
+        type: String,
+        required: true,
+        trim: true,
     },
+    // auctioner: {
+    //     type: mongoose.SchemaTypes.ObjectId,
+    //     ref: 'User',
+    // },
     productName: {
         type: String,
     },
