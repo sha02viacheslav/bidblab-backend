@@ -1462,6 +1462,11 @@ module.exports.getProcessAuctions = async (req, res) => {
     .sort(sortVariable)
     .skip(start)
     .limit(size)
+    .populate({
+      path: 'bids.bidder',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
     .exec();
    
   auctions.forEach((element, key) => {

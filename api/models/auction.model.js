@@ -50,7 +50,7 @@ const auctionSchema = mongoose.Schema({
         type: Number,
         default: 0
     },
-    auctionId: {
+    auctionSerial: {
         type: Number,
         default: 0
     },
