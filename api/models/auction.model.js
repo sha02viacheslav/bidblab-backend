@@ -73,7 +73,8 @@ const auctionSchema = mongoose.Schema({
     },
     updatedAt: Date,
     auctionPicture: {
-        type: String,
+        type: [String],
+        default: [],
     },
 });
 

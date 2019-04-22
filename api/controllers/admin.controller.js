@@ -3,6 +3,8 @@ const joi = require('joi');
 const moment = require('moment');
 const Validations = require('../utils/validations');
 const Encryption = require('../utils/encryption');
+const config = require('../config');
+const fs = require('fs-extra');
 
 const User = mongoose.model('User');
 const Question = mongoose.model('Question');
@@ -1256,78 +1258,78 @@ module.exports.deleteFlags = async (req, res) => {
   });
 };
 
-module.exports.addAuction = async (req, res) => {
-  const schema = joi
-    .object({
-      auctionTitle: joi
-        .string()
-        .trim()
-        .max(100)
-        .required(),
-      bidblabPrice: joi
-        .number()
-        .required(),
-      retailPrice: joi
-        .number()
-        .min(Number(req.body.bidblabPrice))
-        .required(),
-      bidFee: joi
-        .number()
-        .required(),
-      starts: joi
-        .date()
-        .required(),
-      closes: joi
-        .date()
-        .min(new Date(req.body.starts))
-        .required(),
-    })
-    .options({
-      stripUnknown: true,
-    });
-  const result = schema.validate(req.body);
-  if (result.error) {
-    return res.status(200).json({
-      msg: result.error.details[0].message,
-      err: null,
-      data: null,
-    });
-  }
-  // const existingQuestion = await Question.findOne({
-  //   title: {
-  //     $regex: result.value.title,
-  //     $options: 'i',
-  //   },
-  // })
-  //   .lean()
-  //   .exec();
-  // if (existingQuestion) {
-  //   return res.status(200).json({
-  //     err: null,
-  //     msg: 'Question already exists, try a different format or rephrasing.',
-  //     data: null,
-  //   });
-  // }
-  let newAuction = await Auction.create(result.value);
-  // newAuction = await Auction.findById(newAuction._id)
-  //   .lean()
-  //   .populate({
-  //     path: 'asker',
-  //     select:
-  //       '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  //   })
-  //   .populate({
-  //     path: 'answers.answerer',
-  //     select:
-  //       '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  //   })
-  //   .exec();
-  res.status(201).json({
-    err: null,
-    msg: 'Auction was added successfully.',
-    data: newAuction,
-  });
-};
+// module.exports.addAuction = async (req, res) => {
+//   const schema = joi
+//     .object({
+//       auctionTitle: joi
+//         .string()
+//         .trim()
+//         .max(100)
+//         .required(),
+//       bidblabPrice: joi
+//         .number()
+//         .required(),
+//       retailPrice: joi
+//         .number()
+//         .min(Number(req.body.bidblabPrice))
+//         .required(),
+//       bidFee: joi
+//         .number()
+//         .required(),
+//       starts: joi
+//         .date()
+//         .required(),
+//       closes: joi
+//         .date()
+//         .min(new Date(req.body.starts))
+//         .required(),
+//     })
+//     .options({
+//       stripUnknown: true,
+//     });
+//   const result = schema.validate(req.body);
+//   if (result.error) {
+//     return res.status(200).json({
+//       msg: result.error.details[0].message,
+//       err: null,
+//       data: null,
+//     });
+//   }
+//   const existingQuestion = await Question.findOne({
+//     title: {
+//       $regex: result.value.title,
+//       $options: 'i',
+//     },
+//   })
+//     .lean()
+//     .exec();
+//   if (existingQuestion) {
+//     return res.status(200).json({
+//       err: null,
+//       msg: 'Question already exists, try a different format or rephrasing.',
+//       data: null,
+//     });
+//   }
+//   let newAuction = await Auction.create(result.value);
+//   newAuction = await Auction.findById(newAuction._id)
+//     .lean()
+//     .populate({
+//       path: 'asker',
+//       select:
+//         '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+//     })
+//     .populate({
+//       path: 'answers.answerer',
+//       select:
+//         '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+//     })
+//     .exec();
+//   res.status(201).json({
+//     err: null,
+//     msg: 'Auction was added successfully.',
+//     data: newAuction,
+//   });
+// };
 
 module.exports.getPendingAuctions = async (req, res) => {
   let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
@@ -1623,3 +1625,70 @@ module.exports.deleteAuctions = async (req, res) => {
   });
 };
 
+module.exports.addAuction = async (req, res) => {
+  const schema = joi
+    .object({
+      auctionTitle: joi
+        .string()
+        .trim()
+        .max(100)
+        .required(),
+      bidblabPrice: joi
+        .number()
+        .required(),
+      retailPrice: joi
+        .number()
+        .min(Number(req.body.bidblabPrice))
+        .required(),
+      bidFee: joi
+        .number()
+        .required(),
+      starts: joi
+        .date()
+        .required(),
+      closes: joi
+        .date()
+        .min(new Date(req.body.starts))
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(200).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+  const newAuction = await Auction.create(result.value);
+  
+  // if (!req.files.length || !req.body.questionId) {
+  //   return res.status(200).json({
+  //     err: null,
+  //     msg:
+  //       'Image upload has encountered an error, supported image types are: png, jpeg, gif.',
+  //     data: null,
+  //   });
+  // }
+  
+  if(req.files.length){
+    if (newAuction.auctionPicture.length) {
+      await fs.remove(path.resolve('./', newAuction.auctionPicture));
+    }
+    let imagePath = [];
+    req.files.forEach(element => {
+      imagePath.push(`${config.MEDIA_FOLDER}/auctionPictures/${element.filename}`);
+    });
+    newAuction.auctionPicture = imagePath;
+    await newAuction.save();
+  }
+
+  res.status(200).json({
+    err: null,
+    msg: 'Auction was added successfully.',
+    data: newAuction,
+  });
+
+};

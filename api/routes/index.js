@@ -68,9 +68,14 @@ const upload_profile = (folder, allowedTypes) => (req, res, next) =>
   )(req, res, next);
 
 
-  const upload_question = (folder, allowedTypes) => (req, res, next) =>
+const upload_question = (folder, allowedTypes) => (req, res, next) =>
   multer(`${folder}`, allowedTypes).single(
     'file',
+  )(req, res, next);
+
+const upload_auction = (folder, allowedTypes) => (req, res, next) =>
+  multer(`${folder}`, allowedTypes).array(
+    'files[]'
   )(req, res, next);
 // -------------------------------Auth------------------------------------------
 router.post('/auth/signup', isNotAuthenticated, errorHandler(authCtrl.signup));
@@ -205,10 +210,11 @@ router.post(
   errorHandler(adminCtrl.changeFlagsRole),
 );
 // ------------Auction------------
-router.post(
+router.patch(
   '/admin/addAuction',
   isAuthenticated,
   isAdmin,
+  upload_auction('auctionPictures', ['image']),
   errorHandler(adminCtrl.addAuction),
 );
 router.get(

@@ -863,6 +863,7 @@ module.exports.changeQuestionPicture = async (req, res) => {
       .status(404)
       .json({ err: null, msg: 'Account not found.', data: null });
   }
+  debugger;
   if (question.questionPicture) {
     await fs.remove(path.resolve('./', question.questionPicture.path));
   }
