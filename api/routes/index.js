@@ -235,6 +235,13 @@ router.get(
   isAdmin,
   errorHandler(adminCtrl.getClosedAuctions)
 );
+router.patch(
+  '/admin/updateAuction',
+  isAuthenticated,
+  isAdmin,
+  upload_auction('auctionPictures', ['image']),
+  errorHandler(adminCtrl.updateAuction),
+);
 router.post(
   '/admin/deleteAuctions',
   isAuthenticated,

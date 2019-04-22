@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const joi = require('joi');
 const moment = require('moment');
+const path = require('path');
 const Validations = require('../utils/validations');
 const Encryption = require('../utils/encryption');
 const config = require('../config');
@@ -102,6 +103,7 @@ module.exports.createUser = async (req, res) => {
 		data: newUser.toObject(),
 	});
 };
+
 module.exports.getMembers = async (req, res) => {
 
   const { offset = 0, limit = 10, search, active, direction } = req.query;
@@ -264,6 +266,7 @@ module.exports.getMembers = async (req, res) => {
     }
   });
 };
+
 module.exports.updateUser = async (req, res) => {
   	const schema = joi
 		.object({
@@ -644,7 +647,7 @@ module.exports.changeQuestionsRole = async (req, res) => {
 
 module.exports.updateQuestion = async (req, res) => {
   if (!Validations.isObjectId(req.params.questionId)) {
-    return res.status(422).json({
+    return res.status(200).json({
       err: null,
       msg: 'questionId parameter must be a valid ObjectId.',
       data: null,
@@ -1662,18 +1665,10 @@ module.exports.addAuction = async (req, res) => {
       data: null,
     });
   }
+  
   const newAuction = await Auction.create(result.value);
   
-  // if (!req.files.length || !req.body.questionId) {
-  //   return res.status(200).json({
-  //     err: null,
-  //     msg:
-  //       'Image upload has encountered an error, supported image types are: png, jpeg, gif.',
-  //     data: null,
-  //   });
-  // }
-  
-  if(req.files.length){
+  if(req.files.length && newAuction){
     if (newAuction.auctionPicture.length) {
       await fs.remove(path.resolve('./', newAuction.auctionPicture));
     }
@@ -1685,10 +1680,117 @@ module.exports.addAuction = async (req, res) => {
     await newAuction.save();
   }
 
+  if(!newAuction){
+    res.status(200).json({
+      err: null,
+      msg: 'Auction was not added.',
+      data: newAuction,
+    });
+  }
+
   res.status(200).json({
     err: null,
     msg: 'Auction was added successfully.',
     data: newAuction,
   });
+};
 
+module.exports.updateAuction = async (req, res) => {
+  if (!Validations.isObjectId(req.body.auctionId)) {
+    return res.status(200).json({
+      err: null,
+      msg: 'auctionId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  const schema = joi
+    .object({
+      auctionTitle: joi
+        .string()
+        .trim()
+        .max(100)
+        .required(),
+      bidblabPrice: joi
+        .number()
+        .required(),
+      retailPrice: joi
+        .number()
+        .min(Number(req.body.bidblabPrice))
+        .required(),
+      bidFee: joi
+        .number()
+        .required(),
+      starts: joi
+        .date()
+        .required(),
+      closes: joi
+        .date()
+        .min(new Date(req.body.starts))
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(200).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+  
+  // if (!req.files.length || !req.body.questionId) {
+  //   return res.status(200).json({
+  //     err: null,
+  //     msg:
+  //       'Image upload has encountered an error, supported image types are: png, jpeg, gif.',
+  //     data: null,
+  //   });
+  // }
+
+  result.value.updatedAt = moment().toDate();
+  const newAuction = await Auction.findByIdAndUpdate(
+    req.body.auctionId,
+    {
+      $set: result.value,
+    },
+    { new: true },
+  )
+    .exec();
+  
+  if(newAuction){
+    debugger;
+    for(index in req.body.deletedPictureurls) {
+      await fs.remove(path.resolve('./', req.body.deletedPictureurls[index]));
+    }
+    let imagePath = [];
+    newAuction.auctionPicture.forEach(element => {
+      if(!req.body.deletedPictureurls){
+        req.body.deletedPictureurls = [];
+      }
+      if(!req.body.deletedPictureurls.some(item => item == element)){
+        imagePath.push(element);
+      }
+    });
+    req.files.forEach(element => {
+      imagePath.push(`${config.MEDIA_FOLDER}/auctionPictures/${element.filename}`);
+    });
+    newAuction.auctionPicture = imagePath;
+    await newAuction.save();
+  }
+
+  if(!newAuction){
+    res.status(200).json({
+      err: null,
+      msg: 'Auction was not updated.',
+      data: newAuction,
+    });
+  }
+
+  res.status(200).json({
+    err: null,
+    msg: 'Auction was updated successfully.',
+    data: newAuction,
+  });
 };
