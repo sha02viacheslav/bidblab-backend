@@ -1919,10 +1919,36 @@ module.exports.getMails = async (req, res) => {
 
   res.status(200).json({
     err: null,
-    msg: 'Questions retrieved successfully.',
+    msg: 'Mails retrieved successfully.',
     data: {
       totalMails,
       mails,
+    },
+  });
+};
+
+module.exports.applyRoleOfMails = async (req, res) => {
+
+  let changedMails = [];
+  let totalChangedMails = 0;
+
+  for(let index in req.body){
+    let trashMail = await Mail.findByIdAndUpdate(req.body[index]).exec();
+    if (trashMail) {
+      trashMail.role = req.params.apply == 'true'? (trashMail.role | 1 << req.params.roleType) 
+                                      : (trashMail.role & ~(1 << req.params.roleType));
+      await trashMail.save();
+      totalChangedMails++;
+      changedMails.push(trashMail);
+    }
+  }
+  
+  res.status(200).json({
+    err: null,
+    msg: 'Auctions was suspended successfully.',
+    data: {
+      totalChangedMails,
+      changedMails
     },
   });
 };

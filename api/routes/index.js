@@ -299,10 +299,10 @@ router.get(
   errorHandler(adminCtrl.getMails)
 );
 router.post(
-  '/admin/trashMail',
+  '/admin/applyRoleOfMails/:roleType/:apply',
   isAuthenticated,
   isAdmin,
-  errorHandler(adminCtrl.trashMail),
+  errorHandler(adminCtrl.applyRoleOfMails),
 );
 // ----------------------------------User-------------------------------------
 router.patch(
