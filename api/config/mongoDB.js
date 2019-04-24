@@ -81,3 +81,4 @@ require('../models/report.model');
 require('../models/interest.model');
 require('../models/credit.model');
 require('../models/auction.model');
+require('../models/mail.model');

@@ -13,6 +13,7 @@ const Credit = mongoose.model('Credit');
 const Interest = mongoose.model('Interest');
 const Report = mongoose.model('Report');
 const Auction = mongoose.model('Auction');
+const Mail = mongoose.model('Mail');
 
 const ObjectId = mongoose.Types.ObjectId;
 module.exports.createUser = async (req, res) => {
@@ -833,21 +834,76 @@ module.exports.deleteAnswer = async (req, res) => {
 
 module.exports.sendMessage = async (req, res) => {
   
+  
+
+  const schema = joi
+    .object({
+      subject: joi
+        .string()
+        .trim()
+        .required(),
+      subject: joi
+        .string()
+        .trim()
+        .required(),
+      message: joi
+        .string()
+        .trim()
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+  result.value.sender = null;
+  result.value.recievers = req.body.recievers;
+  const newMail = await Mail.create(result.value);
+  const recievers = await Mail.aggregate(
+		[
+      { $match: { "_id": newMail._id }},
+			{ $unwind : "$recievers" },
+      {
+        $lookup:{
+          from: "users",
+          localField: "recievers",
+          foreignField: "_id",
+          as: "recievers"
+        }
+      },
+			{ $project : { 
+				recievers: { $arrayElemAt: [ "$recievers", 0 ] },
+      }},
+      {
+        $group: {
+          recievers: { "$push": "$recievers.email" },
+          "_id": null,
+        }
+      },
+		]
+  ).exec();
+
   const mailgun = require("mailgun-js");
   const DOMAIN = 'verify.bidblab.com';
   const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN});
 
   const data = {
     from: 'Bidblab <support@bidblab.com>',
-    to: req.body.to,
-    subject: req.body.subject,
-    text: req.body.message,
+    to: recievers[0].recievers,
+    subject: newMail.subject,
+    text: newMail.message,
   };
   mg.messages().send(data);
 
-  res.status(201).json({
+  res.status(200).json({
     err: null,
-    msg: 'User was created successfully.',
+    msg: 'Message was sent successfully.',
     data: "succes"
   });
 };
