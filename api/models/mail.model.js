@@ -5,10 +5,10 @@ const mailSchema = mongoose.Schema({
     type: mongoose.SchemaTypes.ObjectId,
     ref: 'User',
   },
-  recievers: {
-    type: [mongoose.SchemaTypes.ObjectId],
+  recievers: [{
+    type: mongoose.SchemaTypes.ObjectId,
     ref: 'User',
-  },
+  }],
   subject: {
     type: String,
     required: true,

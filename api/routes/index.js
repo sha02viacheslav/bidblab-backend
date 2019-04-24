@@ -291,6 +291,13 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.changeDefaultCredits),
 );
+// ------------Mail------------
+router.get(
+  '/admin/getMails',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getMails)
+);
 // ----------------------------------User-------------------------------------
 router.patch(
   '/user/updateProfile',

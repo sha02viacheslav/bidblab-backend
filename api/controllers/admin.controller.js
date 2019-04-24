@@ -897,7 +897,7 @@ module.exports.sendMessage = async (req, res) => {
     from: 'Bidblab <support@bidblab.com>',
     to: recievers[0].recievers,
     subject: newMail.subject,
-    text: newMail.message,
+    html: newMail.message,
   };
   mg.messages().send(data);
 
@@ -1853,5 +1853,76 @@ module.exports.updateAuction = async (req, res) => {
     err: null,
     msg: 'Auction was updated successfully.',
     data: newAuction,
+  });
+};
+
+module.exports.getMails = async (req, res) => {
+  let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  filterTags = filterTags.trim();
+  let tagFilterFlag = false;
+  if(filterTags){
+    tagFilterFlag = true;
+  }
+  let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
+  
+  const query = 
+    {
+      $and: [
+        search?
+        {
+          message: {
+            $regex: search,
+            $options: 'i',
+          },
+        }:{},
+      ],
+    };
+  
+  var sortVariable = {};
+  if(direction == 'asc'){
+    sortVariable[active] = 1;
+  }
+  else if(direction == 'desc'){
+    sortVariable[active] = -1;
+  }
+  else{
+    sortVariable['createdAt'] = -1;
+  }
+  let start = Number(limit) * Number(offset);
+  const size = Number(limit);
+
+  const totalMails = await  Mail.count(query).exec();
+  if(totalMails <= start){
+    start = 0;
+  }
+  
+  const mails = await Mail.find(query)
+    .lean()
+    .sort(sortVariable)
+    .skip(start)
+    .limit(size)
+    .populate({
+      path: 'sender',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'recievers',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
+      
+  mails.forEach(( element, index ) => {
+    element.index = start + index;
+  });
+
+  res.status(200).json({
+    err: null,
+    msg: 'Questions retrieved successfully.',
+    data: {
+      totalMails,
+      mails,
+    },
   });
 };
