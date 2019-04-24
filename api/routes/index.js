@@ -298,6 +298,12 @@ router.get(
   isAdmin,
   errorHandler(adminCtrl.getMails)
 );
+router.post(
+  '/admin/trashMail',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.trashMail),
+);
 // ----------------------------------User-------------------------------------
 router.patch(
   '/user/updateProfile',

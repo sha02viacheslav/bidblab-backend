@@ -1857,13 +1857,7 @@ module.exports.updateAuction = async (req, res) => {
 };
 
 module.exports.getMails = async (req, res) => {
-  let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
-  filterTags = filterTags.trim();
-  let tagFilterFlag = false;
-  if(filterTags){
-    tagFilterFlag = true;
-  }
-  let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
+  let { offset = 0, limit = 10, search, type, active, direction } = req.query;
   
   const query = 
     {
@@ -1875,8 +1869,14 @@ module.exports.getMails = async (req, res) => {
             $options: 'i',
           },
         }:{},
+        type? {
+          role: type,
+        } : {},
       ],
     };
+
+    console.log("query=", query);
+    console.log("offset=", offset);
   
   var sortVariable = {};
   if(direction == 'asc'){
