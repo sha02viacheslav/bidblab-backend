@@ -676,11 +676,15 @@ module.exports.updateQuestion = async (req, res) => {
       data: null,
     });
   }
-  const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
-  const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
-    req.headers.host}/${imagePath}`;
-    
-  result.value.questionPicture =  { path: imagePath, url: url, };
+  if(req.file){
+    const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
+    const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
+      req.headers.host}/${imagePath}`;
+    result.value.questionPicture =  { path: imagePath, url: url, };
+  }
+  else{
+    result.value.questionPicture = ''
+  }
   result.value.updatedAt = moment().toDate();
   const updatedQuestion = await Question.findByIdAndUpdate(
     req.body.questionId,
