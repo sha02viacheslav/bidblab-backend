@@ -148,9 +148,9 @@ router.get(
   errorHandler(adminCtrl.getQuestions)
 );
 router.patch(
-  '/admin/updateQuestion/:questionId',
+  '/common/updateQuestion',
   isAuthenticated,
-  isAdmin,
+  upload_question('questionPictures', ['image']),
   errorHandler(adminCtrl.updateQuestion),
 );
 router.post(
@@ -369,20 +369,15 @@ router.get(
   errorHandler(commonCtrl.getQuestionsWithYourAnswers),
 );
 router.post(
-  '/common/addQuestion',
-  isAuthenticated,
-  errorHandler(commonCtrl.addQuestion),
-);
-router.post(
   '/common/addAnswer/:questionId/:answertype',
   isAuthenticated,
   errorHandler(commonCtrl.addAnswer),
 );
 router.patch(
-  '/common/changeQuestionPicture',
+  '/common/addQuestion',
   isAuthenticated,
   upload_question('questionPictures', ['image']),
-  errorHandler(commonCtrl.changeQuestionPicture),
+  errorHandler(commonCtrl.addQuestion),
 );
 
 router.get(

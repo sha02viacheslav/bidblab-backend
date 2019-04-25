@@ -723,6 +723,11 @@ module.exports.addQuestion = async (req, res) => {
   result.value.asker = req.decodedToken.admin
     ? null
     : req.decodedToken.user._id;
+  const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
+  const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
+    req.headers.host}/${imagePath}`;
+  result.value.questionPicture =  { path: imagePath, url: url, };
+  
   result.value.credit = 5;
   const defaultCredits = await Credit.find({ dataType: "credit"})
   .exec();
@@ -863,7 +868,6 @@ module.exports.changeQuestionPicture = async (req, res) => {
       .status(404)
       .json({ err: null, msg: 'Account not found.', data: null });
   }
-  debugger;
   if (question.questionPicture) {
     await fs.remove(path.resolve('./', question.questionPicture.path));
   }

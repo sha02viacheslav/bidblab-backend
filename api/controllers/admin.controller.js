@@ -647,7 +647,7 @@ module.exports.changeQuestionsRole = async (req, res) => {
 };
 
 module.exports.updateQuestion = async (req, res) => {
-  if (!Validations.isObjectId(req.params.questionId)) {
+  if (!Validations.isObjectId(req.body.questionId)) {
     return res.status(200).json({
       err: null,
       msg: 'questionId parameter must be a valid ObjectId.',
@@ -676,13 +676,17 @@ module.exports.updateQuestion = async (req, res) => {
       data: null,
     });
   }
+  const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
+  const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
+    req.headers.host}/${imagePath}`;
+    
+  result.value.questionPicture =  { path: imagePath, url: url, };
   result.value.updatedAt = moment().toDate();
   const updatedQuestion = await Question.findByIdAndUpdate(
-    req.params.questionId,
+    req.body.questionId,
     {
       $set: result.value,
     },
-    { new: true },
   )
     .lean()
     .populate({
@@ -700,6 +704,9 @@ module.exports.updateQuestion = async (req, res) => {
     return res
       .status(404)
       .json({ err: null, msg: 'Question not found.', data: null });
+  }
+  if (updatedQuestion.questionPicture) {
+    await fs.remove(path.resolve('./', updatedQuestion.questionPicture.path));
   }
   res.status(200).json({
     err: null,
