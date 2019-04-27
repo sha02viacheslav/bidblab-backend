@@ -406,7 +406,6 @@ router.get(
 );
 router.get(
   '/common/getDefaultCredits',
-  isAuthenticated,
   errorHandler(commonCtrl.getDefaultCredits),
 );
 router.get('/common/getAuctions', 

@@ -921,7 +921,8 @@ module.exports.sendMessage = async (req, res) => {
 
 module.exports.getDefaultCredits  = async (req, res) => {
 	const defaultCredits = await Credit.find({ dataType: "credit"})
-	.exec();
+  .exec();
+  
 	if (!defaultCredits) {
 		res.status(200).json({
 			err: null,
@@ -948,7 +949,10 @@ module.exports.changeDefaultCredits  = async (req, res) => {
 				.required(),
 			defaultPrivateAnswerCredit: joi
 				.number()
-				.required()
+				.required(),
+      optionalImageCredit: joi
+				.number()
+				.required(),
 		})
 		.options({
 			stripUnknown: true,

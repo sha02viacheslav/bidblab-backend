@@ -17,6 +17,10 @@ const creditSchema = mongoose.Schema({
         type: Number,
         required: true,
     },
+    defaultOptionalImageCredit: {
+        type: Number,
+        required: true,
+    },
   });
   
 mongoose.model('Credit', creditSchema);
