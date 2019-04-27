@@ -308,13 +308,8 @@ router.post(
 router.patch(
   '/user/updateProfile',
   isAuthenticated,
-  errorHandler(userCtrl.updateProfile),
-);
-router.patch(
-  '/user/changeProfilePicture',
-  isAuthenticated,
   upload_profile('profilePictures', ['image']),
-  errorHandler(userCtrl.changeProfilePicture),
+  errorHandler(userCtrl.updateProfile),
 );
 
 // --------------------------------Common-------------------------------------

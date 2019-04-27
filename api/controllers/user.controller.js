@@ -88,14 +88,32 @@ module.exports.updateProfile = async (req, res) => {
 			});
 		}
 	}
+	if(req.file){
+		const imagePath = `${config.MEDIA_FOLDER}/${req.decodedToken.user.username}/profilePictures/${req.file.filename}`;
+		const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${req.headers.host}/${imagePath}`;
+		result.value.profilePicture =  { path: imagePath, url: url, };
+	}
+	else{
+    result.value.profilePicture = ''
+	}
 	result.value.updatedAt = moment().toDate();
-	const updatedUser = await User.findByIdAndUpdate(
+	let updatedUser = await User.findByIdAndUpdate(
 			req.decodedToken.user._id, {
 				$set: result.value,
-			}, {
-				new: true,
 			},
 		)
+		.exec();
+	if (!updatedUser) {
+		return res.status(404).json({
+			err: null,
+			msg: 'Account not found.',
+			data: null,
+		});
+	}
+	if (updatedUser.profilePicture) {
+    await fs.remove(path.resolve('./', updatedUser.profilePicture.path));
+	}
+	updatedUser = await User.findByIdAndUpdate( req.decodedToken.user._id )
 		.select('-createdAt -updatedAt')
 		.exec();
 	if (!updatedUser) {
@@ -109,47 +127,5 @@ module.exports.updateProfile = async (req, res) => {
 		err: null,
 		msg: 'Profile was updated successfully.',
 		data: updatedUser.toObject(),
-	});
-};
-
-module.exports.changeProfilePicture = async (req, res) => {
-	if (!req.file) {
-		return res.status(422).json({
-			err: null,
-			msg: 'Image upload has encountered an error, supported image types are: png, jpeg, gif.',
-			data: null,
-		});
-	}
-	const imagePath = `${config.MEDIA_FOLDER}/${req.decodedToken.user.username}/profilePictures/${req.file.filename}`;
-	const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${req.headers.host}/${imagePath}`;
-	const user = await User.findByIdAndUpdate(req.decodedToken.user._id, {
-			$set: {
-				profilePicture: {
-					path: imagePath,
-					url,
-				},
-			},
-		})
-		.lean()
-		.exec();
-	if (!user) {
-		return res
-			.status(404)
-			.json({
-				err: null,
-				msg: 'Account not found.',
-				data: null
-			});
-	}
-	if (user.profilePicture) {
-		await fs.remove(path.resolve('./', user.profilePicture.path));
-	}
-	res.status(200).json({
-		err: null,
-		msg: 'Profile Picture was changed successfully.',
-		data: {
-			url,
-			path: imagePath,
-		},
 	});
 };
