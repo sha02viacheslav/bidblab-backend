@@ -354,6 +354,11 @@ router.get(
   errorHandler(commonCtrl.getUsersFollowing),
 );
 router.get(
+  '/common/getUserData/',
+  isAuthenticated,
+  errorHandler(commonCtrl.getUserData),
+);
+router.get(
   '/common/getMyCredits/',
   isAuthenticated,
   errorHandler(commonCtrl.getMyCredits),

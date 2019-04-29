@@ -634,6 +634,7 @@ module.exports.getQuestionsFollowing = async (req, res) => {
     },
   });
 };
+
 module.exports.getUsersFollowing = async (req, res) => {
   if (!Validations.isObjectId(req.decodedToken.user._id)) {
     return res.status(422).json({
@@ -676,6 +677,32 @@ module.exports.getUsersFollowing = async (req, res) => {
     data: {
       count,
       users,
+    },
+  });
+};
+
+module.exports.getUserData = async (req, res) => {
+  if (!Validations.isObjectId(req.decodedToken.user._id)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'UserId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  const user = await User.findById(req.decodedToken.user._id)
+    .lean()
+    .populate({
+      path: 'follows.follower',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
+ 
+  res.status(200).json({
+    err: null,
+    msg: 'Following users retrieved successfully.',
+    data: {
+      user
     },
   });
 };
