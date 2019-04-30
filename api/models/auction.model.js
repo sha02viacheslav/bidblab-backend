@@ -25,19 +25,15 @@ const auctionSchema = mongoose.Schema({
         required: true,
         trim: true,
     },
-    // auctioner: {
-    //     type: mongoose.SchemaTypes.ObjectId,
-    //     ref: 'User',
+    // productName: {
+    //     type: String,
     // },
-    productName: {
-        type: String,
-    },
-    productDescription: {
-        type: String,
-    },
-    manufactureDescription: {
-        type: String,
-    },
+    // productDescription: {
+    //     type: String,
+    // },
+    // manufactureDescription: {
+    //     type: String,
+    // },
     bidblabPrice: {
         type: Number,
         default: 0
@@ -53,6 +49,9 @@ const auctionSchema = mongoose.Schema({
     auctionSerial: {
         type: Number,
         default: 0
+    },
+    auctionDetail: {
+        type: String,
     },
     starts: {
         type: Date,

@@ -1729,6 +1729,8 @@ module.exports.addAuction = async (req, res) => {
       auctionSerial: joi
         .number()
         .required(),
+      auctionDetail: joi
+        .string(),
     })
     .options({
       stripUnknown: true,
@@ -1831,6 +1833,8 @@ module.exports.updateAuction = async (req, res) => {
       auctionSerial: joi
         .number()
         .required(),
+      auctionDetail: joi
+        .string(),
     })
     .options({
       stripUnknown: true,
