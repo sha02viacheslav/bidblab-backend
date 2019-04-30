@@ -842,11 +842,8 @@ module.exports.deleteAnswer = async (req, res) => {
   });
 };
 
-
 module.exports.sendMessage = async (req, res) => {
   
-  
-
   const schema = joi
     .object({
       subject: joi
@@ -1729,6 +1726,9 @@ module.exports.addAuction = async (req, res) => {
         .date()
         .min(new Date(req.body.starts))
         .required(),
+      auctionSerial: joi
+        .number()
+        .required(),
     })
     .options({
       stripUnknown: true,
@@ -1739,6 +1739,31 @@ module.exports.addAuction = async (req, res) => {
       msg: result.error.details[0].message,
       err: null,
       data: null,
+    });
+  }
+
+  let auction = await Auction.aggregate(
+    [
+      {
+        $group: {
+          _id: "null", 
+          maxAuctionSerial: {
+            $max: '$auctionSerial'
+          },
+          cntAuctionSerial: {
+            $sum: 1
+          },
+        }
+      }
+    ]
+  )
+  .exec();
+
+  if(auction && auction.maxAuctionSerial && auction.maxAuctionSerial + 1 != req.body.auctionSerial){
+    res.status(200).json({
+      err: null,
+      msg: 'AuctionID is invalid. Try again.',
+      data: newAuction,
     });
   }
   
@@ -1803,6 +1828,9 @@ module.exports.updateAuction = async (req, res) => {
         .date()
         .min(new Date(req.body.starts))
         .required(),
+      auctionSerial: joi
+        .number()
+        .required(),
     })
     .options({
       stripUnknown: true,
@@ -1816,15 +1844,25 @@ module.exports.updateAuction = async (req, res) => {
     });
   }
   
-  // if (!req.files.length || !req.body.questionId) {
-  //   return res.status(200).json({
-  //     err: null,
-  //     msg:
-  //       'Image upload has encountered an error, supported image types are: png, jpeg, gif.',
-  //     data: null,
-  //   });
-  // }
+  const auction = await Auction.find(
+    { $and: 
+      [
+        {_id: { $ne: ObjectId(req.body.auctionId)}},
+        {auctionSerial: req.body.auctionSerial},
+      ]
+    }
+  )
+  .lean()
+  .exec();
 
+  if(auction.length){
+    return res.status(200).json({
+      err: null,
+      msg: 'AuctionID is deplicated. Try again.',
+      data: null,
+    });
+  }
+  
   result.value.updatedAt = moment().toDate();
   const newAuction = await Auction.findByIdAndUpdate(
     req.body.auctionId,
@@ -1836,7 +1874,6 @@ module.exports.updateAuction = async (req, res) => {
     .exec();
   
   if(newAuction){
-    debugger;
     for(index in req.body.deletedPictureurls) {
       await fs.remove(path.resolve('./', req.body.deletedPictureurls[index]));
     }
@@ -1857,7 +1894,7 @@ module.exports.updateAuction = async (req, res) => {
   }
 
   if(!newAuction){
-    res.status(200).json({
+    return res.status(200).json({
       err: null,
       msg: 'Auction was not updated.',
       data: newAuction,
@@ -1942,28 +1979,38 @@ module.exports.getMails = async (req, res) => {
   });
 };
 
-module.exports.applyRoleOfMails = async (req, res) => {
+module.exports.getDataForAddAuction = async (req, res) => {
 
-  let changedMails = [];
-  let totalChangedMails = 0;
+  let auction = await Auction.aggregate(
+    [
+      {
+        $group: {
+          _id: "null", 
+          maxAuctionSerial: {
+            $max: '$auctionSerial'
+          },
+          cntAuctionSerial: {
+            $sum: 1
+          },
+        }
+      }
+    ]
+  )
+  .exec();
 
-  for(let index in req.body){
-    let trashMail = await Mail.findByIdAndUpdate(req.body[index]).exec();
-    if (trashMail) {
-      trashMail.role = req.params.apply == 'true'? (trashMail.role | 1 << req.params.roleType) 
-                                      : (trashMail.role & ~(1 << req.params.roleType));
-      await trashMail.save();
-      totalChangedMails++;
-      changedMails.push(trashMail);
-    }
+  if(!auction){
+    return res.status(200).json({
+      err: null,
+      msg: 'Auctions was not found.',
+      data: null
+    });
   }
   
   res.status(200).json({
     err: null,
     msg: 'Auctions was suspended successfully.',
     data: {
-      totalChangedMails,
-      changedMails
+      finalAuctionSerial: auction[0].maxAuctionSerial,
     },
   });
 };

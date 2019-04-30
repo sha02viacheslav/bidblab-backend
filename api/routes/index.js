@@ -254,6 +254,12 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.changeAuctionsRole),
 );
+router.get(
+  '/admin/getDataForAddAuction',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getDataForAddAuction),
+);
 // ------------User------------
 router.get(
   '/admin/getUser/:userId',
