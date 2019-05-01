@@ -52,6 +52,7 @@ const auctionSchema = mongoose.Schema({
     },
     auctionDetail: {
         type: String,
+        default: '',
     },
     starts: {
         type: Date,

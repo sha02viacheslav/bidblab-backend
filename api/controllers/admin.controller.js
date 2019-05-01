@@ -1586,7 +1586,7 @@ module.exports.getClosedAuctions = async (req, res) => {
         }:{},
         {
           closes: { 
-            "$lt": new Date(),
+            "$lte": new Date(),
           }, 
         }
         // tagFilterFlag?{
@@ -1729,8 +1729,6 @@ module.exports.addAuction = async (req, res) => {
       auctionSerial: joi
         .number()
         .required(),
-      auctionDetail: joi
-        .string(),
     })
     .options({
       stripUnknown: true,
@@ -1768,7 +1766,7 @@ module.exports.addAuction = async (req, res) => {
       data: newAuction,
     });
   }
-  
+  result.value.auctionDetail = req.body.auctionDetail;
   const newAuction = await Auction.create(result.value);
   
   if(req.files.length && newAuction){
@@ -1833,8 +1831,6 @@ module.exports.updateAuction = async (req, res) => {
       auctionSerial: joi
         .number()
         .required(),
-      auctionDetail: joi
-        .string(),
     })
     .options({
       stripUnknown: true,
@@ -1867,6 +1863,7 @@ module.exports.updateAuction = async (req, res) => {
     });
   }
   
+  result.value.auctionDetail = req.body.auctionDetail;
   result.value.updatedAt = moment().toDate();
   const newAuction = await Auction.findByIdAndUpdate(
     req.body.auctionId,
@@ -1878,18 +1875,10 @@ module.exports.updateAuction = async (req, res) => {
     .exec();
   
   if(newAuction){
-    for(index in req.body.deletedPictureurls) {
-      await fs.remove(path.resolve('./', req.body.deletedPictureurls[index]));
+    for(var index = 0; newAuction.auctionPicture[index]; index++) {
+      await fs.remove(path.resolve('./', newAuction.auctionPicture[index]));
     }
     let imagePath = [];
-    newAuction.auctionPicture.forEach(element => {
-      if(!req.body.deletedPictureurls){
-        req.body.deletedPictureurls = [];
-      }
-      if(!req.body.deletedPictureurls.some(item => item == element)){
-        imagePath.push(element);
-      }
-    });
     req.files.forEach(element => {
       imagePath.push(`${config.MEDIA_FOLDER}/auctionPictures/${element.filename}`);
     });
