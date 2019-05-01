@@ -1508,6 +1508,15 @@ module.exports.addBid = async (req, res) => {
       data: null,
     });
   }
+
+  if (auction.bids.some(element => element.bidder == req.decodedToken.user._id && element.bidPrice == req.body.bidPrice)) {
+    return res.status(200).json({
+      err: null,
+      msg: 'You have already bid this bid price.',
+      data: null,
+    });
+  }
+
   result.value.bidder = req.decodedToken.admin
     ? null
     : req.decodedToken.user._id;
