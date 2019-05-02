@@ -750,10 +750,6 @@ module.exports.addQuestion = async (req, res) => {
   result.value.asker = req.decodedToken.admin
     ? null
     : req.decodedToken.user._id;
-  const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
-  const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
-    req.headers.host}/${imagePath}`;
-  result.value.questionPicture =  { path: imagePath, url: url, };
   
   result.value.credit = 5;
   const defaultCredits = await Credit.find({ dataType: "credit"})
@@ -761,6 +757,24 @@ module.exports.addQuestion = async (req, res) => {
   if(defaultCredits[0] && defaultCredits[0].defaultQuestionCredit){
     result.value.credit = defaultCredits[0].defaultQuestionCredit;
   }
+  
+
+  if(req.file){
+    const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
+    const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
+      req.headers.host}/${imagePath}`;
+    result.value.questionPicture =  { path: imagePath, url: url, };
+    result.value.questionPicture =  { path: imagePath, url: url, };
+    result.value.optionalImageCredit = 3;
+    if(defaultCredits[0] && defaultCredits[0].defaultOptionalImageCredit){
+      result.value.optionalImageCredit = defaultCredits[0].defaultOptionalImageCredit;
+    }
+  }
+  else{
+    result.value.questionPicture = '';
+    result.value.optionalImageCredit =0;
+  }
+  
   let newQuestion = await Question.create(result.value);
   newQuestion = await Question.findById(newQuestion._id)
     .lean()

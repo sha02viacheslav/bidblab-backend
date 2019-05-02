@@ -553,10 +553,15 @@ module.exports.addQuestion = async (req, res) => {
   result.value.asker = req.decodedToken.admin
     ? null
     : req.decodedToken.user._id;
-  const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
-  const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
-    req.headers.host}/${imagePath}`;
-  result.value.questionPicture =  { path: imagePath, url: url, };
+  if(req.file){
+    const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
+    const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
+      req.headers.host}/${imagePath}`;
+    result.value.questionPicture =  { path: imagePath, url: url, };
+  }
+  else{
+    result.value.questionPicture = '';
+  }
   
   let newQuestion = await Question.create(result.value);
   newQuestion = await Question.findById(newQuestion._id)
@@ -748,7 +753,7 @@ module.exports.updateQuestion = async (req, res) => {
     result.value.questionPicture =  { path: imagePath, url: url, };
   }
   else{
-    result.value.questionPicture = ''
+    result.value.questionPicture = '';
   }
   result.value.updatedAt = moment().toDate();
   const updatedQuestion = await Question.findByIdAndUpdate(
