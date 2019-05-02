@@ -515,7 +515,7 @@ module.exports.getMyCredits = async (req, res) => {
     });
   }
   
-  let credits = await module.exports.internalGetMyCredits(req, res);
+  let credits = await module.exports.internalGetMyCredits(req.decodedToken.user._id);
   if(!credits){
     return res.status(200).json({
       err: null,
@@ -1552,9 +1552,9 @@ module.exports.addBid = async (req, res) => {
 
 };
 
-module.exports.internalGetMyCredits = async (req, res) => {
+module.exports.internalGetMyCredits = async (userId) => {
 
-  if (!Validations.isObjectId(req.decodedToken.user._id)) {
+  if (!Validations.isObjectId(userId)) {
     return data = { };
   }
   
@@ -1562,13 +1562,13 @@ module.exports.internalGetMyCredits = async (req, res) => {
     [
       { 
         $match: {
-          "asker": ObjectId(req.decodedToken.user._id)   
+          "asker": ObjectId(userId)   
         }
       },
       {
         $group: {
           _id: "null", 
-          credits: {
+          questionCredits: {
             $sum: "$credit"
           },
           optionalImageCredits: {
@@ -1580,8 +1580,8 @@ module.exports.internalGetMyCredits = async (req, res) => {
   )
   .exec();
   let questionCredits = 0;
-  if(question && question[0] && question[0].credits){
-    questionCredits = question[0].credits;
+  if(question && question[0] && question[0].questionCredits){
+    questionCredits = question[0].questionCredits;
   }
   let optionalImageCredits = 0;
   if(question && question[0] && question[0].optionalImageCredits){
@@ -1594,14 +1594,14 @@ module.exports.internalGetMyCredits = async (req, res) => {
         $match: { 
           "answers":{
             "$elemMatch": {
-              "answerer": ObjectId(req.decodedToken.user._id)
+              "answerer": ObjectId(userId)
             }
           }   
         }
       },
       { $unwind : "$answers" },
       { 
-        $match: { "answers.answerer": ObjectId(req.decodedToken.user._id) }
+        $match: { "answers.answerer": ObjectId(userId) }
       },
       { $project : { "answers" : 1, "_id": 0 } },
       {
@@ -1633,7 +1633,7 @@ module.exports.internalGetMyCredits = async (req, res) => {
         $match: { 
           "bids":{
             "$elemMatch": {
-              "bidder": ObjectId(req.decodedToken.user._id)
+              "bidder": ObjectId(userId)
             }
           }   
         }
@@ -1641,7 +1641,7 @@ module.exports.internalGetMyCredits = async (req, res) => {
       { $unwind : "$bids" },
       { 
         $match: { 
-          "bids.bidder": ObjectId(req.decodedToken.user._id)  
+          "bids.bidder": ObjectId(userId)  
         }
       },
       { $project : { "bids" : 1, "bidFee" : 1, "_id": 0 } },

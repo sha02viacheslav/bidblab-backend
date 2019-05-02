@@ -183,36 +183,19 @@ module.exports.getMembers = async (req, res) => {
     members[key].totalAnswers = 0;
     members[key].totalFollowers = 0;
     members[key].questionCredits = 0;
+    members[key].optionalImageCredits = 0;
     members[key].answerCredits = 0;
     members[key].referalCredits = 0;
-    let question = await Question.aggregate(
-      [
-        { 
-          $match: {
-            "asker": members[key]._id   
-          }
-        },
-        {
-          $group: {
-            _id: "null", 
-            totalQuestions: {
-              $sum: 1
-            },
-            questionCredits: {
-              $sum: "$credit"
-            }
-          }
-        }
-      ]
-    )
-    .exec();
-
-    if(question){
-      if(question[0]){
-        members[key].totalQuestions = question[0].totalQuestions? question[0].totalQuestions : 0;
-        members[key].questionCredits = question[0].questionCredits? question[0].questionCredits : 0;
-      }
+    members[key].loseCredits = 0;
+    let credits = await module.exports.internalGetMyCredits(members[key]._id);
+    if(credits){
+      members[key].questionCredits = credits.questionCredits;
+      members[key].optionalImageCredits = credits.optionalImageCredits;
+      members[key].answerCredits = credits.answerCredits;
+      members[key].referalCredits = credits.referalCredits;
+      members[key].loseCredits = credits.loseCredits;
     }
+    members[key].totalQuestions = await Question.count( { "asker": members[key]._id } ).exec();
 
     question = await Question.aggregate(
       [
@@ -238,9 +221,6 @@ module.exports.getMembers = async (req, res) => {
             totalAnswers: {
               $sum: 1
             },
-            answerCredits: {
-              $sum: "$answers.credit"
-            }
           }
         }
       ]
@@ -249,12 +229,6 @@ module.exports.getMembers = async (req, res) => {
     if(question){
       if(question[0]){
         members[key].totalAnswers = question[0].totalAnswers? question[0].totalAnswers : 0;
-        members[key].answerCredits = question[0].answerCredits? question[0].answerCredits : 0;
-      }
-    }
-    if(question){
-      if(question[0]){
-        members[key].referalCredits = question[0].answerCredits? question[0].answerCredits : 0;
       }
     }
   } 
@@ -2067,3 +2041,126 @@ module.exports.getDataForAddAuction = async (req, res) => {
     },
   });
 };
+
+module.exports.internalGetMyCredits = async (userId) => {
+
+  if (!Validations.isObjectId(userId)) {
+    return data = { };
+  }
+  
+  let question = await Question.aggregate(
+    [
+      { 
+        $match: {
+          "asker": ObjectId(userId)   
+        }
+      },
+      {
+        $group: {
+          _id: "null", 
+          questionCredits: {
+            $sum: "$credit"
+          },
+          optionalImageCredits: {
+            $sum: "$optionalImageCredit"
+          }
+        }
+      }
+    ]
+  )
+  .exec();
+  let questionCredits = 0;
+  if(question && question[0] && question[0].questionCredits){
+    questionCredits = question[0].questionCredits;
+  }
+  let optionalImageCredits = 0;
+  if(question && question[0] && question[0].optionalImageCredits){
+    optionalImageCredits = question[0].optionalImageCredits;
+  }
+  
+  question = await Question.aggregate(
+    [
+      { 
+        $match: { 
+          "answers":{
+            "$elemMatch": {
+              "answerer": ObjectId(userId)
+            }
+          }   
+        }
+      },
+      { $unwind : "$answers" },
+      { 
+        $match: { "answers.answerer": ObjectId(userId) }
+      },
+      { $project : { "answers" : 1, "_id": 0 } },
+      {
+        $group: {
+          _id: "null", 
+          count: { $sum: "$answers.credit" }
+        }
+      }
+    ]
+  )
+  .exec();
+  
+  let answerCredits = 0;
+  if(question && question[0] && question[0].count){
+    answerCredits = question[0].count;
+  }
+  let referalCredits = 0;
+  if(question){
+    if(question[1]){
+      if(question[0].count){
+        referalCredits = question[0].count;
+      }
+    }
+  }
+
+  let auction = await Auction.aggregate(
+    [
+      { 
+        $match: { 
+          "bids":{
+            "$elemMatch": {
+              "bidder": ObjectId(userId)
+            }
+          }   
+        }
+      },
+      { $unwind : "$bids" },
+      { 
+        $match: { 
+          "bids.bidder": ObjectId(userId)  
+        }
+      },
+      { $project : { "bids" : 1, "bidFee" : 1, "_id": 0 } },
+      {
+        $group: {
+          _id: "null", 
+          count: {
+            $sum: "$bidFee"
+          }
+        }
+      }
+    ]
+  )
+  .exec();
+  let loseCredits = 0;
+  if(auction){
+    if(auction[0]){
+      if(auction[0].count){
+        loseCredits = auction[0].count;
+      }
+    }
+  }
+
+  return data = {
+    questionCredits,
+    optionalImageCredits,
+    answerCredits,
+    referalCredits,
+    loseCredits,
+  };
+
+}
