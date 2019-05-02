@@ -526,7 +526,7 @@ module.exports.getMyCredits = async (req, res) => {
 
   res.status(200).json({
     err: null,
-    msg: 'Questions retrieved successfully.',
+    msg: 'Credits retrieved successfully.',
     data: {
       credits
     },
@@ -1568,8 +1568,11 @@ module.exports.internalGetMyCredits = async (req, res) => {
       {
         $group: {
           _id: "null", 
-          count: {
+          credits: {
             $sum: "$credit"
+          },
+          optionalImageCredits: {
+            $sum: "$optionalImageCredit"
           }
         }
       }
@@ -1577,8 +1580,12 @@ module.exports.internalGetMyCredits = async (req, res) => {
   )
   .exec();
   let questionCredits = 0;
-  if(question && question[0] && question[0].count){
-    questionCredits = question[0].count;
+  if(question && question[0] && question[0].credits){
+    questionCredits = question[0].credits;
+  }
+  let optionalImageCredits = 0;
+  if(question && question[0] && question[0].optionalImageCredits){
+    optionalImageCredits = question[0].optionalImageCredits;
   }
   
   question = await Question.aggregate(
@@ -1606,6 +1613,7 @@ module.exports.internalGetMyCredits = async (req, res) => {
     ]
   )
   .exec();
+  
   let answerCredits = 0;
   if(question && question[0] && question[0].count){
     answerCredits = question[0].count;
@@ -1659,6 +1667,7 @@ module.exports.internalGetMyCredits = async (req, res) => {
 
   return data = {
     questionCredits,
+    optionalImageCredits,
     answerCredits,
     referalCredits,
     loseCredits,
