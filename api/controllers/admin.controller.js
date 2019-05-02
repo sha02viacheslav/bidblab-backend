@@ -947,7 +947,7 @@ module.exports.changeDefaultCredits  = async (req, res) => {
 			defaultPrivateAnswerCredit: joi
 				.number()
 				.required(),
-      optionalImageCredit: joi
+      defaultOptionalImageCredit: joi
 				.number()
 				.required(),
 		})
@@ -973,7 +973,7 @@ module.exports.changeDefaultCredits  = async (req, res) => {
 	)
 	.exec();
 	if (!defaultCredits) {
-		res.status(200).json({
+		return res.status(200).json({
 			err: null,
 			msg: 'DefaultCredits was not changed.',
 			data: null,
@@ -982,7 +982,7 @@ module.exports.changeDefaultCredits  = async (req, res) => {
 
 	res.status(200).json({
 		err: null,
-		msg: 'DefaultCredits was found successfully.',
+		msg: 'DefaultCredits was changed successfully.',
 		data: defaultCredits[0],
 	});
 }
