@@ -141,6 +141,13 @@ router.post(
   errorHandler(adminCtrl.deleteMembers),
 );
 // ------------Question------------
+router.patch(
+  '/admin/addQuestion',
+  isAuthenticated,
+  isAdmin,
+  upload_question('questionPictures', ['image']),
+  errorHandler(adminCtrl.addQuestion),
+);
 router.get(
   '/admin/getQuestions',
   isAuthenticated,
@@ -150,6 +157,7 @@ router.get(
 router.patch(
   '/common/updateQuestion',
   isAuthenticated,
+  isAdmin,
   upload_question('questionPictures', ['image']),
   errorHandler(adminCtrl.updateQuestion),
 );

@@ -507,6 +507,68 @@ module.exports.changeMembersRole = async (req, res) => {
   });
 };
 
+module.exports.addQuestion = async (req, res) => {
+  const schema = joi
+    .object({
+      title: joi
+        .string()
+        .trim()
+        .max(500)
+        .required(),
+      credit: joi
+        .number()
+        .required(),
+      tag: joi
+        .string()
+        .trim()
+        .max(15)
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+  const existingQuestion = await Question.findOne({
+    title: {
+      $regex: result.value.title,
+      $options: 'i',
+    },
+  })
+    .lean()
+    .exec();
+  if (existingQuestion) {
+    return res.status(403).json({
+      err: null,
+      msg: 'Question already exists, try a different format or rephrasing.',
+      data: null,
+    });
+  }
+  result.value.asker = req.decodedToken.admin
+    ? null
+    : req.decodedToken.user._id;
+  const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
+  const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
+    req.headers.host}/${imagePath}`;
+  result.value.questionPicture =  { path: imagePath, url: url, };
+  
+  let newQuestion = await Question.create(result.value);
+  newQuestion = await Question.findById(newQuestion._id)
+    .lean()
+    .exec();
+  res.status(201).json({
+    err: null,
+    msg: 'Question was added successfully.',
+    data: newQuestion,
+  });
+};
+
 module.exports.getQuestions = async (req, res) => {
   let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
   filterTags = filterTags.trim();
@@ -660,6 +722,9 @@ module.exports.updateQuestion = async (req, res) => {
         .string()
         .trim()
         .max(500),
+      credit: joi
+        .number()
+        .required(),
       tag: joi
         .string()
         .trim()
@@ -693,16 +758,6 @@ module.exports.updateQuestion = async (req, res) => {
     },
   )
     .lean()
-    .populate({
-      path: 'asker',
-      select:
-        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-    })
-    .populate({
-      path: 'answers.answerer',
-      select:
-        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-    })
     .exec();
   if (!updatedQuestion) {
     return res
