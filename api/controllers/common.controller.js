@@ -1446,10 +1446,13 @@ module.exports.getAuctions = async (req, res) => {
   .exec();
 
 	auctions.forEach(element => {
+    if(element.closes < new Date()){
+      element.role = "closed";
+    }
     let tempBids = element.bids;
     let maxBidPrice = Math.max.apply(Math, tempBids.map(function(o) { return o.bidPrice; }));
     for (index = element.bids.length - 1; index >= 0; index--) {
-      if((element.bids[index].bidder._id) != (req.decodedToken.user._id)){
+      if((element.bids[index].bidder._id) != (req.decodedToken.user._id) && element.closes > new Date()){
         element.bids.splice(index, 1);
       }
       else{
@@ -1506,10 +1509,11 @@ module.exports.addBid = async (req, res) => {
     .status(200)
     .json({ err: null, msg: 'Auction was not found.', data: null });
   }
-  if (auction.auctioner && auction.auctioner == req.decodedToken.user._id) {
+
+  if (auction.closes < new Date()) {
     return res.status(200).json({
       err: null,
-      msg: 'You can not bid a auction you submitted.',
+      msg: 'This auction is colosed.',
       data: null,
     });
   }

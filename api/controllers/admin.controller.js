@@ -1569,26 +1569,12 @@ module.exports.getProcessAuctions = async (req, res) => {
       select:
         '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
     })
-    .exec();
-   
-  auctions.forEach((element, key) => {
-    element.index = start + key;
-    let tempBids = element.bids;
-    let maxUniqueBid = '';
-    for (index = element.bids.length - 1; index >= 0; index--) {
-      element.bids[index].bidStatus = 0;
-      if(tempBids.some( item => item.bidPrice == element.bids[index].bidPrice && item._id != element.bids[index]._id)){
-        element.bids[index].bidStatus = 1<<0;
-      }
-      else{
-        // uniqueBids.push(element.element.bids[index]);
-        if(!maxUniqueBid || maxUniqueBid.bidPrice < element.bids[index].bidPrice){
-          maxUniqueBid = element.bids[index];
-        }
-      }
-    }
-    element.maxUniqueBid = maxUniqueBid;
-  });
+    .exec(); 
+
+  for( var key in auctions){
+    auctions[key].index = start + key;
+    auctions[key] = await module.exports.checkBids(auctions[key]);
+  }
 
   res.status(200).json({
     err: null,
@@ -1651,26 +1637,17 @@ module.exports.getClosedAuctions = async (req, res) => {
     .sort(sortVariable)
     .skip(start)
     .limit(size)
+    .populate({
+      path: 'bids.bidder',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
     .exec();
    
-  auctions.forEach((element, key) => {
-    element.index = start + key;
-    let tempBids = element.bids;
-    let maxUniqueBid = '';
-    for (index = element.bids.length - 1; index >= 0; index--) {
-      element.bids[index].bidStatus = 0;
-      if(tempBids.some( item => item.bidPrice == element.bids[index].bidPrice && item._id != element.bids[index]._id)){
-        element.bids[index].bidStatus = 1<<0;
-      }
-      else{
-        // uniqueBids.push(element.element.bids[index]);
-        if(!maxUniqueBid || maxUniqueBid.bidPrice < element.bids[index].bidPrice){
-          maxUniqueBid = element.bids[index];
-        }
-      }
-    }
-    element.maxUniqueBid = maxUniqueBid;
-  });
+  for( var key in auctions){
+    auctions[key].index = start + key;
+    auctions[key] = await module.exports.checkBids(auctions[key]);
+  }
 
   res.status(200).json({
     err: null,
@@ -2162,5 +2139,31 @@ module.exports.internalGetMyCredits = async (userId) => {
     referalCredits,
     loseCredits,
   };
+
+}
+module.exports.checkBids = async (auction) => {
+
+  let tempBids = auction.bids;
+  let maxUniqueBid = '';
+  for (index = auction.bids.length - 1; index >= 0; index--) {
+    auction.bids[index].bidStatus = 0;
+    if(tempBids.some( item => item.bidPrice == auction.bids[index].bidPrice && item._id != auction.bids[index]._id)){
+      auction.bids[index].bidStatus = 1<<0;
+    }
+    else{
+      // uniqueBids.push(auction.auction.bids[index]);
+      if(!maxUniqueBid || maxUniqueBid.bidPrice < auction.bids[index].bidPrice){
+        maxUniqueBid = auction.bids[index];
+      }
+    }
+  }
+  auction.maxUniqueBid = maxUniqueBid;
+  if(maxUniqueBid){
+    let temp = auction.bids.find( item => item._id == auction.maxUniqueBid._id);
+    temp.bidStatus |= 1<<1;
+    console.log("temp=", temp);
+  }
+
+  return auction;
 
 }
