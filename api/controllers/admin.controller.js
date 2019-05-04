@@ -1572,7 +1572,7 @@ module.exports.getProcessAuctions = async (req, res) => {
     .exec(); 
 
   for( var key in auctions){
-    auctions[key].index = start + key;
+    auctions[key].index = start + Number(key);
     auctions[key] = await module.exports.checkBids(auctions[key]);
   }
 
@@ -1645,7 +1645,7 @@ module.exports.getClosedAuctions = async (req, res) => {
     .exec();
    
   for( var key in auctions){
-    auctions[key].index = start + key;
+    auctions[key].index = start + Number(key);
     auctions[key] = await module.exports.checkBids(auctions[key]);
   }
 
