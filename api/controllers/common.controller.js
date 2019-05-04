@@ -1445,27 +1445,15 @@ module.exports.getAuctions = async (req, res) => {
   })
   .exec();
 
-	auctions.forEach(element => {
-    if(element.closes < new Date()){
-      element.role = "closed";
+  for( var key in auctions){
+    if(auctions[key].closes < new Date()){
+      auctions[key].role = "closed";
+      auctions[key] = await module.exports.checkBids(auctions[key]);
     }
-    let tempBids = element.bids;
-    let maxBidPrice = Math.max.apply(Math, tempBids.map(function(o) { return o.bidPrice; }));
-    for (index = element.bids.length - 1; index >= 0; index--) {
-      if((element.bids[index].bidder._id) != (req.decodedToken.user._id) && element.closes > new Date()){
-        element.bids.splice(index, 1);
-      }
-      else{
-        element.bids[index].bidStatus = 0;
-        if(tempBids.some( item => item.bidPrice == element.bids[index].bidPrice && item._id != element.bids[index]._id)){
-          element.bids[index].bidStatus = 1<<0;
-        }
-        if(element.bids[index].bidPrice == maxBidPrice){
-          element.bids[index].bidStatus |= 1<<1;
-        }
-      }
+    else{
+      auctions[key].bids = [];
     }
-  });
+  }
   
 	res.status(200).json({
 	  err: null,
@@ -1476,6 +1464,33 @@ module.exports.getAuctions = async (req, res) => {
 	  },
 	});
 };
+
+module.exports.checkBids = async (auction) => {
+
+  let tempBids = auction.bids;
+  let maxUniqueBid = '';
+  for (index = auction.bids.length - 1; index >= 0; index--) {
+    auction.bids[index].bidStatus = 0;
+    if(tempBids.some( item => item.bidPrice == auction.bids[index].bidPrice && item._id != auction.bids[index]._id)){
+      auction.bids[index].bidStatus = 1<<0;
+    }
+    else{
+      // uniqueBids.push(auction.auction.bids[index]);
+      if(!maxUniqueBid || maxUniqueBid.bidPrice < auction.bids[index].bidPrice){
+        maxUniqueBid = auction.bids[index];
+      }
+    }
+  }
+  auction.maxUniqueBid = maxUniqueBid;
+  if(maxUniqueBid){
+    let temp = auction.bids.find( item => item._id == auction.maxUniqueBid._id);
+    temp.bidStatus |= 1<<1;
+    console.log("temp=", temp);
+  }
+
+  return auction;
+
+}
 
 module.exports.addBid = async (req, res) => {
   if (!Validations.isObjectId(req.params.auctionId)) {
@@ -1678,3 +1693,4 @@ module.exports.internalGetMyCredits = async (userId) => {
   };
 
 }
+
