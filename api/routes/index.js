@@ -426,6 +426,10 @@ router.get('/common/getAuctions',
   isAuthenticated,
   errorHandler(commonCtrl.getAuctions)
 );
+router.get('/common/getBiddingAuctions', 
+  isAuthenticated,
+  errorHandler(commonCtrl.getBiddingAuctions)
+);
 router.post(
   '/common/addBid/:auctionId',
   isAuthenticated,

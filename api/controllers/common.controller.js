@@ -1407,31 +1407,71 @@ module.exports.getDefaultCredits  = async (req, res) => {
 }
 
 module.exports.getAuctions = async (req, res) => {
-	// const { offset = 0, limit = 10, search } = req.query;
-	// const query = search
-	//   ? {
-	// 	$or: [
-	// 	  {
-	// 		title: {
-	// 		  $regex: search,
-	// 		  $options: 'i',
-	// 		},
-	// 	  },
-		  // {
-		  //   tag: {
-		  //     $regex: search,
-		  //     $options: 'i',
-		  //   },
-		  // },
-	// 	],
-	//   }
-	//   : {};
+  const query = {
+    starts: { $lt: new Date()}
+  };
   
 	// const start = Number(limit) * Number(offset);
 	// const size = Number(limit);
   
-  const totalAuctionsCount = await Auction.count().exec();
-  const auctions = await  Auction.find()
+  const totalAuctionsCount = await Auction.count(query).exec();
+  const auctions = await  Auction.find(query)
+   .lean()
+  .populate({
+    path: 'auctioner',
+    select:
+    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .populate({
+    path: 'bids.bidder',
+    select:
+    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .exec();
+
+  for( var key in auctions){
+    if(auctions[key].closes < new Date()){
+      auctions[key].role = "closed";
+      auctions[key] = await module.exports.checkBids(auctions[key]);
+    }
+    else{
+      auctions[key].bids = [];
+    }
+  }
+  
+	res.status(200).json({
+	  err: null,
+	  msg: 'Auctions retrieved successfully.',
+	  data: {
+      totalAuctionsCount,
+      auctions,
+	  },
+	});
+};
+
+module.exports.getBiddingAuctions = async (req, res) => {
+  const query = {
+    $and: [
+      {
+        "bids": {
+          "$elemMatch": {
+            "bidder": req.decodedToken.user._id
+          }
+        }
+      },
+      {
+        "starts": {
+          "$lt": new Date()
+        }
+      },
+    ],
+  };
+  
+	// const start = Number(limit) * Number(offset);
+	// const size = Number(limit);
+  
+  const totalAuctionsCount = await Auction.count(query).exec();
+  const auctions = await  Auction.find(query)
    .lean()
   .populate({
     path: 'auctioner',
