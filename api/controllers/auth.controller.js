@@ -331,20 +331,36 @@ module.exports.forgotPassword = async (req, res) => {
     .add(24, 'hours')
     .toDate();
   await user.save();
-  await nodemailer.sendMail({
-    from: config.MAILER.from,
+  // await nodemailer.sendMail({
+  //   from: config.MAILER.from,
+  //   to: user.email,
+  //   subject: 'Password Reset',
+  //   html: `<p>Hello ${
+  //     user.username
+  //   }, please click on the following link to reset your account's password: <a href="${
+  //     config.FRONTEND_URI
+  //   }/#/resetPassword/${
+  //     user.resetPasswordToken
+  //   }">Reset</a><br> If you did not make the request, then ignore this email, your account will be safe.</p>`,
+  // });
+
+  const mailgun = require("mailgun-js");
+  const DOMAIN = 'verify.bidblab.com';
+  const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN});
+
+  const data = {
+    from: 'Bidblab <support@bidblab.com>',
     to: user.email,
     subject: 'Password Reset',
     html: `<p>Hello ${
       user.username
     }, please click on the following link to reset your account's password: <a href="${
       config.FRONTEND_URI
-    }/#/resetPassword/${
+    }/gateway/resetPassword/${
       user.resetPasswordToken
     }">Reset</a><br> If you did not make the request, then ignore this email, your account will be safe.</p>`,
-  });
-  
-  
+  };
+  mg.messages().send(data);
 
   res.status(200).json({
     err: null,

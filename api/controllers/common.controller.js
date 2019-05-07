@@ -36,12 +36,6 @@ module.exports.getQuestions = async (req, res) => {
             $options: 'i',
           },
         },
-        // {
-        //   tag: {
-        //     $regex: search,
-        //     $options: 'i',
-        //   },
-        // },
       ],
     }
     : {};
