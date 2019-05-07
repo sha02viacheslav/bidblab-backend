@@ -423,7 +423,6 @@ router.get(
   errorHandler(commonCtrl.getDefaultCredits),
 );
 router.get('/common/getAuctions', 
-  isAuthenticated,
   errorHandler(commonCtrl.getAuctions)
 );
 router.get('/common/getBiddingAuctions', 
