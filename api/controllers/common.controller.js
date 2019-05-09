@@ -7,6 +7,8 @@ const fs = require('fs-extra');
 const moment = require('moment');
 const path = require('path');
 
+const requestIp = require('request-ip');
+
 const Question = mongoose.model('Question');
 const User = mongoose.model('User');
 const Report = mongoose.model('Report');
@@ -1404,6 +1406,7 @@ module.exports.getAuctions = async (req, res) => {
   const query = {
     starts: { $lt: new Date()}
   };
+
   
 	// const start = Number(limit) * Number(offset);
 	// const size = Number(limit);
@@ -1534,6 +1537,11 @@ module.exports.addBid = async (req, res) => {
       data: null,
     });
   }
+
+
+  const clientIp = requestIp.getClientIp(req); 
+  console.log('clientIp=', clientIp);
+
   const schema = joi
     .object({
       bidPrice: joi
@@ -1587,7 +1595,7 @@ module.exports.addBid = async (req, res) => {
   result.value.bidder = req.decodedToken.admin
     ? null
     : req.decodedToken.user._id;
-  
+  result.value.clientIp = clientIp;
   let bid = auction.bids.create(result.value);
   auction.bids.push(bid);
   await auction.save();

@@ -5,6 +5,10 @@ const bidSchema = mongoose.Schema({
         type: mongoose.SchemaTypes.ObjectId,
         ref: 'User',
     },
+    clientIp: {
+        type: String,
+        default: ''
+    },
     bidPrice: {
         type: Number,
         default: 0
