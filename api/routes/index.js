@@ -425,6 +425,10 @@ router.get(
 router.get('/common/getAuctions', 
   errorHandler(commonCtrl.getAuctions)
 );
+router.get('/common/getAuctionsAfterLogin', 
+  isAuthenticated,
+  errorHandler(commonCtrl.getAuctionsAfterLogin)
+);
 router.get('/common/getBiddingAuctions', 
   isAuthenticated,
   errorHandler(commonCtrl.getBiddingAuctions)

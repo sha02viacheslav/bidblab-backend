@@ -1427,12 +1427,45 @@ module.exports.getAuctions = async (req, res) => {
   .exec();
 
   for( var key in auctions){
+    auctions[key].bids = [];
+  }
+  
+	res.status(200).json({
+	  err: null,
+	  msg: 'Auctions retrieved successfully.',
+	  data: {
+      totalAuctionsCount,
+      auctions,
+	  },
+	});
+};
+module.exports.getAuctionsAfterLogin = async (req, res) => {
+  const query = {
+    starts: { $lt: new Date()}
+  };
+
+  const totalAuctionsCount = await Auction.count(query).exec();
+  const auctions = await  Auction.find(query)
+   .lean()
+  .populate({
+    path: 'auctioner',
+    select:
+    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .populate({
+    path: 'bids.bidder',
+    select:
+    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .exec();
+
+  for( var key in auctions){
+    auctions[key] = await module.exports.checkBids(auctions[key]);
     if(auctions[key].closes < new Date()){
       auctions[key].role = "closed";
-      auctions[key] = await module.exports.checkBids(auctions[key]);
     }
     else{
-      auctions[key].bids = [];
+      auctions[key] = await module.exports.removeOtherBids(req.decodedToken.user._id, auctions[key]);
     }
   }
   
@@ -1469,26 +1502,26 @@ module.exports.getBiddingAuctions = async (req, res) => {
   
   const totalAuctionsCount = await Auction.count(query).exec();
   const auctions = await  Auction.find(query)
-   .lean()
-  .populate({
-    path: 'auctioner',
-    select:
-    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  })
-  .populate({
-    path: 'bids.bidder',
-    select:
-    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  })
-  .exec();
+    .lean()
+    .populate({
+      path: 'auctioner',
+      select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'bids.bidder',
+      select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
 
   for( var key in auctions){
+    auctions[key] = await module.exports.checkBids(auctions[key]);
     if(auctions[key].closes < new Date()){
       auctions[key].role = "closed";
-      auctions[key] = await module.exports.checkBids(auctions[key]);
     }
     else{
-      auctions[key].bids = [];
+      auctions[key] = await module.exports.removeOtherBids(req.decodedToken.user._id, auctions[key]);
     }
   }
   
@@ -1527,6 +1560,24 @@ module.exports.checkBids = async (auction) => {
 
   return auction;
 
+}
+
+module.exports.removeOtherBids = async (userId, auction) => {
+
+  // for (index = auction.bids.length - 1; index >= 0; index--) {
+  //   if(userId == auction.bids[index].bidder._id){
+  //     auction.bids[index].remove();
+  //   }
+  // }
+
+  var tempBids = [];
+  auction.bids.forEach(function(item, index) {
+    if(userId == item.bidder._id){
+      tempBids.push(item);
+    }
+  })
+  auction.bids = tempBids;
+  return auction;
 }
 
 module.exports.addBid = async (req, res) => {
