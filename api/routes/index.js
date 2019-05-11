@@ -319,23 +319,11 @@ router.post(
   errorHandler(adminCtrl.applyRoleOfMails),
 );
 // ------------Site manage------------
-router.get(
-  '/admin/getAboutPageContent',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.getAboutPageContent),
-);
 router.post(
   '/admin/saveAbout',
   isAuthenticated,
   isAdmin,
   errorHandler(adminCtrl.saveAbout),
-);
-router.get(
-  '/admin/getHowPageContent',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.getHowPageContent),
 );
 router.post(
   '/admin/saveHow',
@@ -462,6 +450,14 @@ router.post(
   '/common/addBid/:auctionId',
   isAuthenticated,
   errorHandler(commonCtrl.addBid),
+);
+router.get(
+  '/common/getAboutPageContent',
+  errorHandler(commonCtrl.getAboutPageContent),
+);
+router.get(
+  '/common/getHowPageContent',
+  errorHandler(commonCtrl.getHowPageContent),
 );
 // -----------------------------------File-------------------------------------
 router.get(

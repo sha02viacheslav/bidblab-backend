@@ -2169,25 +2169,6 @@ module.exports.checkBids = async (auction) => {
 
 }
 
-module.exports.getAboutPageContent  = async (req, res) => {
-	const sitemanagers = await Sitemanager.find({ pageType: 'about'})
-  .exec();
-  
-	if (!sitemanagers.length) {
-		return res.status(200).json({
-			err: null,
-			msg: 'Site manager was not found.',
-			data: null,
-		});
-	}
-
-	res.status(200).json({
-		err: null,
-		msg: 'Site manager was found successfully.',
-		data: sitemanagers[0],
-	});
-}
-
 module.exports.saveAbout = async (req, res) => {
   
   const schema = joi
@@ -2235,24 +2216,6 @@ module.exports.saveAbout = async (req, res) => {
     data: "succes"
   });
 };
-module.exports.getHowPageContent  = async (req, res) => {
-	const sitemanagers = await Sitemanager.find({ pageType: 'how'})
-  .exec();
-  
-	if (!sitemanagers.length) {
-		return res.status(200).json({
-			err: null,
-			msg: 'Site manager was not found.',
-			data: null,
-		});
-	}
-
-	res.status(200).json({
-		err: null,
-		msg: 'Site manager was found successfully.',
-		data: sitemanagers[0],
-	});
-}
 
 module.exports.saveHow = async (req, res) => {
   

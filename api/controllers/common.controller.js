@@ -15,6 +15,8 @@ const Report = mongoose.model('Report');
 const Interest = mongoose.model('Interest');
 const Credit = mongoose.model('Credit');
 const Auction = mongoose.model('Auction');
+const Mail = mongoose.model('Mail');
+const Sitemanager = mongoose.model('Sitemanager');
 
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -1787,3 +1789,40 @@ module.exports.internalGetMyCredits = async (userId) => {
 
 }
 
+module.exports.getAboutPageContent  = async (req, res) => {
+	const sitemanagers = await Sitemanager.find({ pageType: 'about'})
+  .exec();
+  
+	if (!sitemanagers.length) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Site manager was not found.',
+			data: null,
+		});
+	}
+
+	res.status(200).json({
+		err: null,
+		msg: 'Site manager was found successfully.',
+		data: sitemanagers[0],
+	});
+}
+
+module.exports.getHowPageContent  = async (req, res) => {
+	const sitemanagers = await Sitemanager.find({ pageType: 'how'})
+  .exec();
+  
+	if (!sitemanagers.length) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Site manager was not found.',
+			data: null,
+		});
+	}
+
+	res.status(200).json({
+		err: null,
+		msg: 'Site manager was found successfully.',
+		data: sitemanagers[0],
+	});
+}
