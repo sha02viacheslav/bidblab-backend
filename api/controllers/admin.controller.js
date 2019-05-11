@@ -2173,8 +2173,8 @@ module.exports.getAboutPageContent  = async (req, res) => {
 	const sitemanagers = await Sitemanager.find({ pageType: 'about'})
   .exec();
   
-	if (!sitemanagers) {
-		res.status(200).json({
+	if (!sitemanagers.length) {
+		return res.status(200).json({
 			err: null,
 			msg: 'Site manager was not found.',
 			data: null,
@@ -2222,14 +2222,82 @@ module.exports.saveAbout = async (req, res) => {
   .exec();
 
   if (!updatedAbout) {
-    return res
-      .status(404)
-      .json({ err: null, msg: 'About page was not found.', data: null });
+    return res.status(422).json({
+      msg: 'About page was not found.',
+      err: null,
+      data: null,
+    });
   }
   
   res.status(200).json({
     err: null,
     msg: 'About page was changed successfully.',
+    data: "succes"
+  });
+};
+module.exports.getHowPageContent  = async (req, res) => {
+	const sitemanagers = await Sitemanager.find({ pageType: 'how'})
+  .exec();
+  
+	if (!sitemanagers.length) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Site manager was not found.',
+			data: null,
+		});
+	}
+
+	res.status(200).json({
+		err: null,
+		msg: 'Site manager was found successfully.',
+		data: sitemanagers[0],
+	});
+}
+
+module.exports.saveHow = async (req, res) => {
+  
+  const schema = joi
+    .object({
+      quillContent: joi
+        .string()
+        .trim()
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+  const updatedAbout = await Sitemanager.findOneAndUpdate(
+    { pageType: 'how'},
+    {
+      $set: result.value,
+    },
+		{
+			new: true,
+      upsert: true 
+		},
+  )
+  .lean()
+  .exec();
+
+  if (!updatedAbout) {
+    return res.status(422).json({
+      msg: 'How it works page was not found.',
+      err: null,
+      data: null,
+    });
+  }
+  
+  res.status(200).json({
+    err: null,
+    msg: 'How it works page was changed successfully.',
     data: "succes"
   });
 };

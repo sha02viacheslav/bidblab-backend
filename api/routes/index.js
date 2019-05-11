@@ -331,6 +331,18 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.saveAbout),
 );
+router.get(
+  '/admin/getHowPageContent',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getHowPageContent),
+);
+router.post(
+  '/admin/saveHow',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.saveHow),
+);
 // ----------------------------------User-------------------------------------
 router.patch(
   '/user/updateProfile',
