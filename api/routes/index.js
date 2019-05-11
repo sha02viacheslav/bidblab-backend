@@ -331,6 +331,24 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.saveHow),
 );
+router.post(
+  '/admin/saveTerms',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.saveTerms),
+);
+router.post(
+  '/admin/saveCookie',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.saveCookie),
+);
+router.post(
+  '/admin/savePrivacy',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.savePrivacy),
+);
 // ----------------------------------User-------------------------------------
 router.patch(
   '/user/updateProfile',
@@ -458,6 +476,18 @@ router.get(
 router.get(
   '/common/getHowPageContent',
   errorHandler(commonCtrl.getHowPageContent),
+);
+router.get(
+  '/common/getTermsPageContent',
+  errorHandler(commonCtrl.getTermsPageContent),
+);
+router.get(
+  '/common/getCookiePageContent',
+  errorHandler(commonCtrl.getCookiePageContent),
+);
+router.get(
+  '/common/getPrivacyPageContent',
+  errorHandler(commonCtrl.getPrivacyPageContent),
 );
 // -----------------------------------File-------------------------------------
 router.get(
