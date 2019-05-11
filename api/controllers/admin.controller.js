@@ -14,6 +14,7 @@ const Interest = mongoose.model('Interest');
 const Report = mongoose.model('Report');
 const Auction = mongoose.model('Auction');
 const Mail = mongoose.model('Mail');
+const Sitemanager = mongoose.model('Sitemanager');
 
 const ObjectId = mongoose.Types.ObjectId;
 module.exports.createUser = async (req, res) => {
@@ -2167,3 +2168,68 @@ module.exports.checkBids = async (auction) => {
   return auction;
 
 }
+
+module.exports.getAboutPageContent  = async (req, res) => {
+	const sitemanagers = await Sitemanager.find({ pageType: 'about'})
+  .exec();
+  
+	if (!sitemanagers) {
+		res.status(200).json({
+			err: null,
+			msg: 'Site manager was not found.',
+			data: null,
+		});
+	}
+
+	res.status(200).json({
+		err: null,
+		msg: 'Site manager was found successfully.',
+		data: sitemanagers[0],
+	});
+}
+
+module.exports.saveAbout = async (req, res) => {
+  
+  const schema = joi
+    .object({
+      quillContent: joi
+        .string()
+        .trim()
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+  const updatedAbout = await Sitemanager.findOneAndUpdate(
+    { pageType: 'about'},
+    {
+      $set: result.value,
+    },
+		{
+			new: true,
+      upsert: true 
+		},
+  )
+  .lean()
+  .exec();
+
+  if (!updatedAbout) {
+    return res
+      .status(404)
+      .json({ err: null, msg: 'About page was not found.', data: null });
+  }
+  
+  res.status(200).json({
+    err: null,
+    msg: 'About page was changed successfully.',
+    data: "succes"
+  });
+};

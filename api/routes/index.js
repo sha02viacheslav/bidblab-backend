@@ -318,6 +318,19 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.applyRoleOfMails),
 );
+// ------------Site manage------------
+router.get(
+  '/admin/getAboutPageContent',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.getAboutPageContent),
+);
+router.post(
+  '/admin/saveAbout',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.saveAbout),
+);
 // ----------------------------------User-------------------------------------
 router.patch(
   '/user/updateProfile',
