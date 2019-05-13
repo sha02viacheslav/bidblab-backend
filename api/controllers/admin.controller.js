@@ -906,6 +906,7 @@ module.exports.sendMessage = async (req, res) => {
     });
   }
   result.value.sender = null;
+  result.value.role = 1 << 1;
   result.value.recievers = req.body.recievers;
   const newMail = await Mail.create(result.value);
   const recievers = await Mail.aggregate(
@@ -1914,7 +1915,7 @@ module.exports.updateAuction = async (req, res) => {
 };
 
 module.exports.getMails = async (req, res) => {
-  let { offset = 0, limit = 10, search, type, active, direction } = req.query;
+  let { offset = 0, limit = 10, search, type = 0, active, direction } = req.query;
   
   const query = 
     {
