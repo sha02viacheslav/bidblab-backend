@@ -365,7 +365,6 @@ router.get(
   errorHandler(commonCtrl.getQuestionsCanAnswer));
 router.get(
   '/common/getQuestionByQuestionId/:questionId',
-  isAuthenticated,
   errorHandler(commonCtrl.getQuestionByQuestionId),
 );
 router.get(
