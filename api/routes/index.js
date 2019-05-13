@@ -293,6 +293,12 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.sendMessage),
 );
+router.post(
+  '/admin/archiveMessage',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.archiveMessage),
+);
 router.get(
   '/admin/getDefaultCredits',
   isAuthenticated,

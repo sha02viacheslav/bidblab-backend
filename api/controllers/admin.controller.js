@@ -885,10 +885,6 @@ module.exports.sendMessage = async (req, res) => {
         .string()
         .trim()
         .required(),
-      subject: joi
-        .string()
-        .trim()
-        .required(),
       message: joi
         .string()
         .trim()
@@ -907,31 +903,26 @@ module.exports.sendMessage = async (req, res) => {
   }
   result.value.sender = null;
   result.value.role = 1 << 1;
-  result.value.recievers = req.body.recievers;
+  
+  var recieversName = req.body.recievers.split(',');
+  const recievers = await User.aggregate([
+    {
+      $match: {
+        "username" : {
+          $in: recieversName
+        }
+      }
+    },
+    {
+      $group: {
+        recieversEmail: { "$push": "$email" },
+        recieversId: { "$push": "$_id" },
+        "_id": null,
+      }
+    },
+  ]).exec();
+  result.value.recievers = recievers[0].recieversId;
   const newMail = await Mail.create(result.value);
-  const recievers = await Mail.aggregate(
-		[
-      { $match: { "_id": newMail._id }},
-			{ $unwind : "$recievers" },
-      {
-        $lookup:{
-          from: "users",
-          localField: "recievers",
-          foreignField: "_id",
-          as: "recievers"
-        }
-      },
-			{ $project : { 
-				recievers: { $arrayElemAt: [ "$recievers", 0 ] },
-      }},
-      {
-        $group: {
-          recievers: { "$push": "$recievers.email" },
-          "_id": null,
-        }
-      },
-		]
-  ).exec();
 
   const mailgun = require("mailgun-js");
   const DOMAIN = 'verify.bidblab.com';
@@ -939,7 +930,7 @@ module.exports.sendMessage = async (req, res) => {
 
   const data = {
     from: 'Bidblab <support@bidblab.com>',
-    to: recievers[0].recievers,
+    to: recievers[0].recieversEmail,
     subject: newMail.subject,
     html: newMail.message,
   };
@@ -948,6 +939,62 @@ module.exports.sendMessage = async (req, res) => {
   res.status(200).json({
     err: null,
     msg: 'Message was sent successfully.',
+    data: "succes"
+  });
+};
+
+module.exports.archiveMessage = async (req, res) => {
+  
+  const schema = joi
+    .object({
+      subject: joi
+        .string()
+        .trim(),
+      message: joi
+        .string()
+        .trim(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+    const result = schema.validate(req.body);
+
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+
+  // result.value.subject = req.body.subject;
+  // result.value.message = req.body.message;
+  result.value.sender = null;
+  result.value.role = 1 << 2;
+  
+  var recieversName = req.body.recievers.split(',');
+  const recievers = await User.aggregate([
+    {
+      $match: {
+        "username" : {
+          $in: recieversName
+        }
+      }
+    },
+    {
+      $group: {
+        recieversEmail: { "$push": "$email" },
+        recieversId: { "$push": "$_id" },
+        "_id": null,
+      }
+    },
+  ]).exec();
+  result.value.recievers = recievers[0].recieversId;
+  const newMail = await Mail.create(result.value);
+
+  res.status(200).json({
+    err: null,
+    msg: 'Message was archived successfully.',
     data: "succes"
   });
 };
@@ -1926,16 +1973,13 @@ module.exports.getMails = async (req, res) => {
             $regex: search,
             $options: 'i',
           },
-        }:{},
+        }: {},
         type? {
           role: type,
-        } : {},
+        }: {},
       ],
     };
 
-    console.log("query=", query);
-    console.log("offset=", offset);
-  
   var sortVariable = {};
   if(direction == 'asc'){
     sortVariable[active] = 1;
