@@ -287,18 +287,6 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.changeMembersRole),
 );
-router.post(
-  '/admin/sendMessage',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.sendMessage),
-);
-router.post(
-  '/admin/archiveMessage',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.archiveMessage),
-);
 router.get(
   '/admin/getDefaultCredits',
   isAuthenticated,
@@ -323,6 +311,18 @@ router.post(
   isAuthenticated,
   isAdmin,
   errorHandler(adminCtrl.applyRoleOfMails),
+);
+router.post(
+  '/admin/sendMessage',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.sendMessage),
+);
+router.post(
+  '/admin/archiveMessage',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.archiveMessage),
 );
 // ------------Site manage------------
 router.post(
@@ -493,6 +493,27 @@ router.get(
 router.get(
   '/common/getPrivacyPageContent',
   errorHandler(commonCtrl.getPrivacyPageContent),
+);
+// ------------Mail------------
+router.get(
+  '/common/getMails',
+  isAuthenticated,
+  errorHandler(commonCtrl.getMails)
+);
+router.post(
+  '/common/applyRoleOfMails/:roleType/:apply',
+  isAuthenticated,
+  errorHandler(commonCtrl.applyRoleOfMails),
+);
+router.post(
+  '/common/sendMessage',
+  isAuthenticated,
+  errorHandler(commonCtrl.sendMessage),
+);
+router.post(
+  '/common/archiveMessage',
+  isAuthenticated,
+  errorHandler(commonCtrl.archiveMessage),
 );
 // -----------------------------------File-------------------------------------
 router.get(

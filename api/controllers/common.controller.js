@@ -1879,3 +1879,194 @@ module.exports.getPrivacyPageContent  = async (req, res) => {
 		data: sitemanagers[0],
 	});
 }
+
+
+module.exports.getMails = async (req, res) => {
+  let { offset = 0, limit = 10, search, type = 0, active, direction } = req.query;
+  
+  const query = 
+    {
+      $and: [
+        search?
+        {
+          message: {
+            $regex: search,
+            $options: 'i',
+          },
+        }: {},
+        type? {
+          role: type,
+        }: {},
+      ],
+    };
+
+  var sortVariable = {};
+  if(direction == 'asc'){
+    sortVariable[active] = 1;
+  }
+  else if(direction == 'desc'){
+    sortVariable[active] = -1;
+  }
+  else{
+    sortVariable['createdAt'] = -1;
+  }
+  let start = Number(limit) * Number(offset);
+  const size = Number(limit);
+
+  const totalMails = await  Mail.count(query).exec();
+  if(totalMails <= start){
+    start = 0;
+  }
+  
+  const mails = await Mail.find(query)
+    .lean()
+    .sort(sortVariable)
+    .skip(start)
+    .limit(size)
+    .populate({
+      path: 'sender',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'recievers',
+      select:
+        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
+      
+  mails.forEach(( element, index ) => {
+    element.index = start + index;
+  });
+
+  res.status(200).json({
+    err: null,
+    msg: 'Mails retrieved successfully.',
+    data: {
+      totalMails,
+      mails,
+    },
+  });
+};
+
+module.exports.sendMessage = async (req, res) => {
+  
+  const schema = joi
+    .object({
+      subject: joi
+        .string()
+        .trim()
+        .required(),
+      message: joi
+        .string()
+        .trim()
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+  result.value.sender = null;
+  result.value.role = 1 << 1;
+  
+  var recieversName = req.body.recievers.split(',');
+  const recievers = await User.aggregate([
+    {
+      $match: {
+        "username" : {
+          $in: recieversName
+        }
+      }
+    },
+    {
+      $group: {
+        recieversEmail: { "$push": "$email" },
+        recieversId: { "$push": "$_id" },
+        "_id": null,
+      }
+    },
+  ]).exec();
+  result.value.recievers = recievers[0].recieversId;
+  const newMail = await Mail.create(result.value);
+
+  const mailgun = require("mailgun-js");
+  const DOMAIN = 'verify.bidblab.com';
+  const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN});
+
+  const data = {
+    from: 'Bidblab <support@bidblab.com>',
+    to: recievers[0].recieversEmail,
+    subject: newMail.subject,
+    html: newMail.message,
+  };
+  mg.messages().send(data);
+
+  res.status(200).json({
+    err: null,
+    msg: 'Message was sent successfully.',
+    data: "succes"
+  });
+};
+
+module.exports.archiveMessage = async (req, res) => {
+  
+  const schema = joi
+    .object({
+      subject: joi
+        .string()
+        .trim(),
+      message: joi
+        .string()
+        .trim(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+    const result = schema.validate(req.body);
+
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+
+  // result.value.subject = req.body.subject;
+  // result.value.message = req.body.message;
+  result.value.sender = null;
+  result.value.role = 1 << 2;
+  
+  var recieversName = req.body.recievers.split(',');
+  const recievers = await User.aggregate([
+    {
+      $match: {
+        "username" : {
+          $in: recieversName
+        }
+      }
+    },
+    {
+      $group: {
+        recieversEmail: { "$push": "$email" },
+        recieversId: { "$push": "$_id" },
+        "_id": null,
+      }
+    },
+  ]).exec();
+  result.value.recievers = recievers[0].recieversId;
+  const newMail = await Mail.create(result.value);
+
+  res.status(200).json({
+    err: null,
+    msg: 'Message was archived successfully.',
+    data: "succes"
+  });
+};
