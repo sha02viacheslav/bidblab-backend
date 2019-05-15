@@ -1988,40 +1988,22 @@ module.exports.sendMessage = async (req, res) => {
       data: null,
     });
   }
-  result.value.sender = null;
+  result.value.sender = req.decodedToken.user._id;
   result.value.role = 1 << 1;
-  
-  var recieversName = req.body.recievers.split(',');
-  const recievers = await User.aggregate([
-    {
-      $match: {
-        "username" : {
-          $in: recieversName
-        }
-      }
-    },
-    {
-      $group: {
-        recieversEmail: { "$push": "$email" },
-        recieversId: { "$push": "$_id" },
-        "_id": null,
-      }
-    },
-  ]).exec();
-  result.value.recievers = recievers[0].recieversId;
+  result.value.recievers = null;
   const newMail = await Mail.create(result.value);
 
-  const mailgun = require("mailgun-js");
-  const DOMAIN = 'verify.bidblab.com';
-  const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN});
+  // const mailgun = require("mailgun-js");
+  // const DOMAIN = 'verify.bidblab.com';
+  // const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN});
 
-  const data = {
-    from: 'Bidblab <support@bidblab.com>',
-    to: recievers[0].recieversEmail,
-    subject: newMail.subject,
-    html: newMail.message,
-  };
-  mg.messages().send(data);
+  // const data = {
+  //   from: 'Bidblab <support@bidblab.com>',
+  //   to: recievers[0].recieversEmail,
+  //   subject: newMail.subject,
+  //   html: newMail.message,
+  // };
+  // mg.messages().send(data);
 
   res.status(200).json({
     err: null,
@@ -2054,29 +2036,9 @@ module.exports.archiveMessage = async (req, res) => {
     });
   }
 
-  // result.value.subject = req.body.subject;
-  // result.value.message = req.body.message;
-  result.value.sender = null;
+  result.value.sender = req.decodedToken.user._id;
   result.value.role = 1 << 2;
-  
-  var recieversName = req.body.recievers.split(',');
-  const recievers = await User.aggregate([
-    {
-      $match: {
-        "username" : {
-          $in: recieversName
-        }
-      }
-    },
-    {
-      $group: {
-        recieversEmail: { "$push": "$email" },
-        recieversId: { "$push": "$_id" },
-        "_id": null,
-      }
-    },
-  ]).exec();
-  result.value.recievers = recievers[0].recieversId;
+  result.value.recievers = null;
   const newMail = await Mail.create(result.value);
 
   res.status(200).json({

@@ -2204,9 +2204,22 @@ module.exports.getMails = async (req, res) => {
             $options: 'i',
           },
         }: {},
-        type? {
-          role: type,
-        }: {},
+        {
+          $or: [
+            type & (1 << 0)? {
+              role: 1 << 1,
+              "recievers": null,
+            }: { _id: null},
+            type & (1 << 1)? {
+              role: 1 << 1,
+              sender: null,
+            }: { _id: null},
+            type & (1 << 2)? {
+              role: 1 << 2,
+              sender: null,
+            }: { _id: null},
+          ]
+        }
       ],
     };
 
