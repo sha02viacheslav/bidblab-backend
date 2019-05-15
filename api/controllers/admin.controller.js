@@ -2349,8 +2349,6 @@ module.exports.archiveMessage = async (req, res) => {
     });
   }
 
-  // result.value.subject = req.body.subject;
-  // result.value.message = req.body.message;
   result.value.sender = null;
   result.value.role = 1 << 2;
   

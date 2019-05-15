@@ -1894,9 +1894,24 @@ module.exports.getMails = async (req, res) => {
             $options: 'i',
           },
         }: {},
-        type? {
-          role: type,
-        }: {},
+        {
+          $or: [
+            type & (1 << 0)? {
+              role: 1 << 1,
+              "recievers": {
+                "$elemMatch": { $eq: ObjectId(req.decodedToken.user._id)}
+              },
+            }: { _id: null},
+            type & (1 << 1)? {
+              role: 1 << 1,
+              sender: req.decodedToken.user._id,
+            }: { _id: null},
+            type & (1 << 2)? {
+              role: 1 << 2,
+              sender: req.decodedToken.user._id,
+            }: { _id: null},
+          ]
+        }
       ],
     };
 
