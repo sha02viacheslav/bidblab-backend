@@ -1728,7 +1728,7 @@ module.exports.internalGetMyCredits = async (userId) => {
       {
         $group: {
           _id: "null", 
-          count: { $sum: "$answers.credit" }
+          answerCredits: { $sum: "$answers.credit" }
         }
       }
     ]
@@ -1736,16 +1736,37 @@ module.exports.internalGetMyCredits = async (userId) => {
   .exec();
   
   let answerCredits = 0;
-  if(question && question[0] && question[0].count){
-    answerCredits = question[0].count;
+  if(question && question[0] && question[0].answerCredits){
+    answerCredits = question[0].answerCredits;
   }
-  let referalCredits = 0;
-  if(question){
-    if(question[1]){
-      if(question[0].count){
-        referalCredits = question[0].count;
+
+  const user = await User.findById(userId).exec();
+
+  const invite = await Invite.aggregate(
+    [
+      { 
+        $match: {
+          $or: [
+            {"referrer": ObjectId(userId)},
+            {"friendEmail": user.email},
+          ] 
+        }
+      },
+      {
+        $group: {
+          _id: "null", 
+          referalCredits: {
+            $sum: "$referralCredit"
+          },
+        }
       }
-    }
+    ]
+  )
+  .exec();
+
+  let referalCredits = 0;
+  if(invite && invite[0] && invite[0].referalCredits){
+    referalCredits = invite[0].referalCredits;
   }
 
   let auction = await Auction.aggregate(
@@ -1769,7 +1790,7 @@ module.exports.internalGetMyCredits = async (userId) => {
       {
         $group: {
           _id: "null", 
-          count: {
+          loseCredits: {
             $sum: "$bidFee"
           }
         }
@@ -1780,8 +1801,8 @@ module.exports.internalGetMyCredits = async (userId) => {
   let loseCredits = 0;
   if(auction){
     if(auction[0]){
-      if(auction[0].count){
-        loseCredits = auction[0].count;
+      if(auction[0].loseCredits){
+        loseCredits = auction[0].loseCredits;
       }
     }
   }
