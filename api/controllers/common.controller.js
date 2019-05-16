@@ -2099,6 +2099,14 @@ module.exports.invite = async (req, res) => {
   result.value.referralCredit = defaultCredits? defaultCredits.defaultReferralCredit : 10;
   const invite = await Invite.create(result.value);
 
+  if (!invite) {
+    return res.status(200).json({
+      err: null,
+      msg: 'Invite was not sent.',
+      data: null,
+    });
+  }
+
   const mailgun = require("mailgun-js");
   const DOMAIN = 'verify.bidblab.com';
   const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN});
@@ -2108,7 +2116,7 @@ module.exports.invite = async (req, res) => {
     from: 'Bidblab <support@bidblab.com>',
     to: invite.friendEmail,
     subject: 'Invite',
-    html: `<p>Hello, ${ referrer.firstName } ${ referrer.lastName } invite you to <support@bidblab.com>, 
+    html: `<p>Hello, ${referrer.firstName} ${referrer.lastName} invite you to BidBlab.com, 
       please click on the following link to agree: <a href="${
       config.FRONTEND_URI
     }/extra/signup/${invite.friendEmail}">Sign up</a></p>`,
