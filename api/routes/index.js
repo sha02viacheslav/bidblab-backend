@@ -287,12 +287,6 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.changeMembersRole),
 );
-router.get(
-  '/admin/getDefaultCredits',
-  isAuthenticated,
-  isAdmin,
-  errorHandler(adminCtrl.getDefaultCredits),
-);
 router.post(
   '/admin/changeDefaultCredits',
   isAuthenticated,

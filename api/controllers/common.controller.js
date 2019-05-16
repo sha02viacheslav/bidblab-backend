@@ -751,10 +751,10 @@ module.exports.addQuestion = async (req, res) => {
     : req.decodedToken.user._id;
   
   result.value.credit = 5;
-  const defaultCredits = await Credit.find({ dataType: "credit"})
+  const defaultCredits = await Credit.findOne({ dataType: "credit"})
   .exec();
-  if(defaultCredits[0] && defaultCredits[0].defaultQuestionCredit){
-    result.value.credit = defaultCredits[0].defaultQuestionCredit;
+  if(defaultCredits && defaultCredits.defaultQuestionCredit){
+    result.value.credit = defaultCredits.defaultQuestionCredit;
   }
   
 
@@ -765,8 +765,8 @@ module.exports.addQuestion = async (req, res) => {
     result.value.questionPicture =  { path: imagePath, url: url, };
     result.value.questionPicture =  { path: imagePath, url: url, };
     result.value.optionalImageCredit = 3;
-    if(defaultCredits[0] && defaultCredits[0].defaultOptionalImageCredit){
-      result.value.optionalImageCredit = defaultCredits[0].defaultOptionalImageCredit;
+    if(defaultCredits && defaultCredits.defaultOptionalImageCredit){
+      result.value.optionalImageCredit = defaultCredits.defaultOptionalImageCredit;
     }
   }
   else{
@@ -849,13 +849,13 @@ module.exports.addAnswer = async (req, res) => {
 		? null
 		: req.decodedToken.user._id;
   result.value.answertype = req.params.answertype;
-	const defaultCredits = await Credit.find({ dataType: "credit"}).exec();
+	const defaultCredits = await Credit.findOne({ dataType: "credit"}).exec();
 	if (result.value.answertype == 'public') {
     if(question.answerCredit){
       result.value.credit = question.answerCredit;
     }
-		else if (defaultCredits[0] && defaultCredits[0].defaultPublicAnswerCredit) {
-			result.value.credit = defaultCredits[0].defaultPublicAnswerCredit;
+		else if (defaultCredits && defaultCredits.defaultPublicAnswerCredit) {
+			result.value.credit = defaultCredits.defaultPublicAnswerCredit;
 		} else {
 			result.value.credit = 8;
 		}
@@ -863,8 +863,8 @@ module.exports.addAnswer = async (req, res) => {
     if(question.answerCredit){
       result.value.credit = Math.round(question.answerCredit / 2);
     }
-		else if (defaultCredits[0] && defaultCredits[0].defaultPrivateAnswerCredit) {
-			result.value.credit = defaultCredits[0].defaultPrivateAnswerCredit;
+		else if (defaultCredits && defaultCredits.defaultPrivateAnswerCredit) {
+			result.value.credit = defaultCredits.defaultPrivateAnswerCredit;
 		} else {
 			result.value.credit = 4;
 		}
@@ -1395,7 +1395,7 @@ module.exports.getStandardInterests  = async (req, res) => {
 }
 
 module.exports.getDefaultCredits  = async (req, res) => {
-	const defaultCredits = await Credit.find({ dataType: "credit"}).exec();
+	const defaultCredits = await Credit.findOne({ dataType: "credit"}).exec();
 	if (!defaultCredits) {
 		res.status(200).json({
 			err: null,
@@ -1407,7 +1407,7 @@ module.exports.getDefaultCredits  = async (req, res) => {
 	res.status(200).json({
 		err: null,
 		msg: 'DefaultCredits was found successfully.',
-		data: defaultCredits[0],
+		data: defaultCredits,
 	});
 }
 
@@ -2000,18 +2000,6 @@ module.exports.sendMessage = async (req, res) => {
   result.value.recievers = null;
   const newMail = await Mail.create(result.value);
 
-  // const mailgun = require("mailgun-js");
-  // const DOMAIN = 'verify.bidblab.com';
-  // const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN});
-
-  // const data = {
-  //   from: 'Bidblab <support@bidblab.com>',
-  //   to: recievers[0].recieversEmail,
-  //   subject: newMail.subject,
-  //   html: newMail.message,
-  // };
-  // mg.messages().send(data);
-
   res.status(200).json({
     err: null,
     msg: 'Message was sent successfully.',
@@ -2107,6 +2095,8 @@ module.exports.invite = async (req, res) => {
   }
 
   result.value.referrer = req.decodedToken.user._id;
+  const defaultCredits = await Credit.findOne({ dataType: "credit"}).exec();
+  result.value.referralCredit = defaultCredits? defaultCredits.defaultReferralCredit : 10;
   const invite = await Invite.create(result.value);
 
   const mailgun = require("mailgun-js");

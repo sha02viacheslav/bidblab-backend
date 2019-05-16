@@ -21,6 +21,10 @@ const creditSchema = mongoose.Schema({
         type: Number,
         required: true,
     },
+    defaultReferralCredit: {
+        type: Number,
+        required: true,
+    },
   });
   
 mongoose.model('Credit', creditSchema);

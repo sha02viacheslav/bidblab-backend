@@ -736,7 +736,7 @@ module.exports.updateQuestion = async (req, res) => {
     });
   }
 
-  const defaultCredits = await Credit.find({ dataType: "credit"}).lean().exec();
+  const defaultCredits = await Credit.findOne({ dataType: "credit"}).lean().exec();
 	if (!defaultCredits) {
 		res.status(200).json({
 			err: null,
@@ -745,7 +745,7 @@ module.exports.updateQuestion = async (req, res) => {
 		});
   }
   
-  if(defaultCredits[0].defaultPublicAnswerCredit == result.value.answerCredit){
+  if(defaultCredits.defaultPublicAnswerCredit == result.value.answerCredit){
     result.value.answerCredit = null;
   }
 
@@ -905,25 +905,6 @@ module.exports.deleteAnswer = async (req, res) => {
   });
 };
 
-module.exports.getDefaultCredits  = async (req, res) => {
-	const defaultCredits = await Credit.find({ dataType: "credit"})
-  .exec();
-  
-	if (!defaultCredits) {
-		res.status(200).json({
-			err: null,
-			msg: 'DefaultCredits was not found.',
-			data: null,
-		});
-	}
-
-	res.status(200).json({
-		err: null,
-		msg: 'StandardInterests was found successfully.',
-		data: defaultCredits[0],
-	});
-}
-
 module.exports.changeDefaultCredits  = async (req, res) => {
 	const schema = joi
 		.object({
@@ -937,6 +918,9 @@ module.exports.changeDefaultCredits  = async (req, res) => {
 				.number()
 				.required(),
       defaultOptionalImageCredit: joi
+				.number()
+				.required(),
+      defaultReferralCredit: joi
 				.number()
 				.required(),
 		})

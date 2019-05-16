@@ -12,9 +12,9 @@ const inviteSchema = mongoose.Schema({
     trim: true,
     lowercase: true,
   },
-  success: {
-    type: Boolean,
-    default: false,
+  referralCredit: {
+    type: Number,
+    default: 0,
   },
   createdAt: {
     type: Date,
