@@ -848,16 +848,22 @@ module.exports.addAnswer = async (req, res) => {
 	result.value.answerer = req.decodedToken.admin
 		? null
 		: req.decodedToken.user._id;
-	result.value.answertype = req.params.answertype;
+  result.value.answertype = req.params.answertype;
 	const defaultCredits = await Credit.find({ dataType: "credit"}).exec();
 	if (result.value.answertype == 'public') {
-		if (defaultCredits[0] && defaultCredits[0].defaultPublicAnswerCredit) {
+    if(question.answerCredit){
+      result.value.credit = question.answerCredit;
+    }
+		else if (defaultCredits[0] && defaultCredits[0].defaultPublicAnswerCredit) {
 			result.value.credit = defaultCredits[0].defaultPublicAnswerCredit;
 		} else {
 			result.value.credit = 8;
 		}
 	} else {
-		if (defaultCredits[0] && defaultCredits[0].defaultPrivateAnswerCredit) {
+    if(question.answerCredit){
+      result.value.credit = Math.round(question.answerCredit / 2);
+    }
+		else if (defaultCredits[0] && defaultCredits[0].defaultPrivateAnswerCredit) {
 			result.value.credit = defaultCredits[0].defaultPrivateAnswerCredit;
 		} else {
 			result.value.credit = 4;

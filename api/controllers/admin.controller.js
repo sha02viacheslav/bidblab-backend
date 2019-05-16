@@ -490,7 +490,7 @@ module.exports.addQuestion = async (req, res) => {
         .trim()
         .max(500)
         .required(),
-      credit: joi
+      answerCredit: joi
         .number()
         .required(),
       tag: joi
@@ -510,6 +510,20 @@ module.exports.addQuestion = async (req, res) => {
       data: null,
     });
   }
+
+  const defaultCredits = await Credit.find({ dataType: "credit"}).exec();
+	if (!defaultCredits) {
+		res.status(200).json({
+			err: null,
+			msg: 'DefaultCredits was not found.',
+			data: null,
+		});
+  }
+  
+  if(defaultCredits.defaultPublicAnswerCredit == result.value.answerCredit){
+    result.value.answerCredit = null;
+  }
+
   const existingQuestion = await Question.findOne({
     title: {
       $regex: result.value.title,
@@ -702,7 +716,7 @@ module.exports.updateQuestion = async (req, res) => {
         .string()
         .trim()
         .max(500),
-      credit: joi
+      answerCredit: joi
         .number()
         .required(),
       tag: joi
@@ -721,6 +735,20 @@ module.exports.updateQuestion = async (req, res) => {
       data: null,
     });
   }
+
+  const defaultCredits = await Credit.find({ dataType: "credit"}).lean().exec();
+	if (!defaultCredits) {
+		res.status(200).json({
+			err: null,
+			msg: 'DefaultCredits was not found.',
+			data: null,
+		});
+  }
+  
+  if(defaultCredits[0].defaultPublicAnswerCredit == result.value.answerCredit){
+    result.value.answerCredit = null;
+  }
+
   if(req.file){
     const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
     const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
