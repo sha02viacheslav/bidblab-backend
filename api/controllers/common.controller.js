@@ -17,6 +17,7 @@ const Credit = mongoose.model('Credit');
 const Auction = mongoose.model('Auction');
 const Mail = mongoose.model('Mail');
 const Sitemanager = mongoose.model('Sitemanager');
+const Invite = mongoose.model('Invite');
 
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -2044,6 +2045,74 @@ module.exports.archiveMessage = async (req, res) => {
   res.status(200).json({
     err: null,
     msg: 'Message was archived successfully.',
+    data: "succes"
+  });
+};
+
+module.exports.invite = async (req, res) => {
+
+  const referrer = await User.findById(req.decodedToken.user._id).exec();
+  if (!referrer) {
+    return  res.status(200).json({
+      err: null,
+      msg: 'Account not found.',
+      data: null
+    });
+  }
+
+  const schema = joi
+    .object({
+      friendEmail: joi
+        .string()
+        .trim()
+        .lowercase()
+        .email()
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+    const result = schema.validate(req.body);
+
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+
+  const friend = await User.findOne({ email: result.value.friendEmail }).lean().exec();
+  if (friend) {
+    return res.status(200).json({
+      err: null,
+      msg: 'Your friend already sign up.',
+      data: null,
+    });
+  }
+
+  result.value.referrer = req.decodedToken.user._id;
+  const invite = await Invite.create(result.value);
+
+  const mailgun = require("mailgun-js");
+  const DOMAIN = 'verify.bidblab.com';
+  const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN});
+
+
+  const data = {
+    from: 'Bidblab <support@bidblab.com>',
+    to: invite.friendEmail,
+    subject: 'Invite',
+    html: `<p>Hello, ${ referrer.firstName } ${ referrer.lastName } invite you to <support@bidblab.com>, 
+      please click on the following link to agree: <a href="${
+      config.FRONTEND_URI
+    }/extra/signup/${invite.friendEmail}">Sign up</a></p>`,
+  };
+  mg.messages().send(data);
+
+  res.status(200).json({
+    err: null,
+    msg: 'Invite was sent successfully.',
     data: "succes"
   });
 };

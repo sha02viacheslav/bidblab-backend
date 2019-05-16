@@ -83,3 +83,4 @@ require('../models/credit.model');
 require('../models/auction.model');
 require('../models/mail.model');
 require('../models/sitemanager.model');
+require('../models/invite.model');

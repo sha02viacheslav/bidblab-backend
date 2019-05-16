@@ -101,22 +101,22 @@ module.exports.signup = async (req, res) => {
 // const mailgun = require("mailgun-js");
 // const DOMAIN = 'sandbox9a8adc4ce55f49f0b77eb0b22c554c10.mailgun.org';
 // const mg = new mailgun({apiKey: '4ec4f2bb04b25807208f073fd21e9511-985b58f4-83a89e91', domain: DOMAIN});
-const mailgun = require("mailgun-js");
-const DOMAIN = 'verify.bidblab.com';
-const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN});
+  const mailgun = require("mailgun-js");
+  const DOMAIN = 'verify.bidblab.com';
+  const mg = new mailgun({apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN});
 
 
-const data = {
-	from: 'Bidblab <support@bidblab.com>',
-	to: newUser.email,
-	subject: 'Account Verification',
-  html: `<p>Hello ${
-    newUser.username
-  }, please click on the following link to verify your account: <a href="${
-    config.FRONTEND_URI
-  }/gateway/verifyAccount/${result.value.verificationToken}">Verify</a></p>`,
-};
-mg.messages().send(data);
+  const data = {
+    from: 'Bidblab <support@bidblab.com>',
+    to: newUser.email,
+    subject: 'Account Verification',
+    html: `<p>Hello ${
+      newUser.username
+    }, please click on the following link to verify your account: <a href="${
+      config.FRONTEND_URI
+    }/gateway/verifyAccount/${result.value.verificationToken}">Verify</a></p>`,
+  };
+  mg.messages().send(data);
 
 
   // nodemailer.sendMail({

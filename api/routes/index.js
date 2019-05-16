@@ -515,6 +515,11 @@ router.post(
   isAuthenticated,
   errorHandler(commonCtrl.archiveMessage),
 );
+router.post(
+  '/common/invite',
+  isAuthenticated,
+  errorHandler(commonCtrl.invite),
+);
 // -----------------------------------File-------------------------------------
 router.get(
   '/file/:parentFolder/:subFolder/:fileName',
