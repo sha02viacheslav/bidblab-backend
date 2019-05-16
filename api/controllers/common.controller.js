@@ -1741,7 +1741,6 @@ module.exports.internalGetMyCredits = async (userId) => {
   }
 
   const user = await User.findById(userId).exec();
-
   const invite = await Invite.aggregate(
     [
       { 
