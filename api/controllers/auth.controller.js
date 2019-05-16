@@ -10,6 +10,7 @@ const config = require('../config');
 
 const User = mongoose.model('User');
 const Admin = mongoose.model('Admin');
+const Invite = mongoose.model('Invite');
 
 module.exports.signup = async (req, res) => {
   const schema = joi
@@ -275,6 +276,13 @@ module.exports.verifyAccount = async (req, res) => {
       data: null,
     });
   }
+
+  const invite = await Invite.findOne({ friendEmail: user.email }).exec();
+  if (invite) {
+    invite.success = true;
+    await invite.save();
+  }
+
   user.verificationToken = undefined;
   user.verificationTokenExpiry = undefined;
   user.verified = true;

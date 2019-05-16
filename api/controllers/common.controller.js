@@ -2088,11 +2088,20 @@ module.exports.invite = async (req, res) => {
     });
   }
 
-  const friend = await User.findOne({ email: result.value.friendEmail }).lean().exec();
+  let friend = await User.findOne({ email: result.value.friendEmail }).lean().exec();
   if (friend) {
     return res.status(200).json({
       err: null,
       msg: 'Your friend already sign up.',
+      data: null,
+    });
+  }
+
+  friend = await Invite.findOne({ friendEmail: result.value.friendEmail }).lean().exec();
+  if (friend) {
+    return res.status(200).json({
+      err: null,
+      msg: 'Your friend already invited.',
       data: null,
     });
   }

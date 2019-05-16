@@ -12,12 +12,16 @@ const inviteSchema = mongoose.Schema({
     trim: true,
     lowercase: true,
   },
+  success: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  role: {
-    success: Boolean,
+  success: {
+    type: Boolean,
     default: false,
   },
 });
