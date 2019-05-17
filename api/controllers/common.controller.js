@@ -31,7 +31,8 @@ const removeProfileOfPrivate = (question) => {
 };
 
 module.exports.getQuestions = async (req, res) => {
-  const { offset = 0, limit = 10, search } = req.query;
+  let { offset = 0, limit = 10, search } = req.query;
+  search = search.replace(/([<>*()?])/g, "\\$1");
   const query = search
     ? {
       $or: [
@@ -101,7 +102,8 @@ module.exports.getQuestions = async (req, res) => {
 };
 
 module.exports.getQuestionsCanAnswer = async (req, res) => {
-  const { offset = 0, limit = 20, search } = req.query;
+  let { offset = 0, limit = 20, search } = req.query;
+  search = search.replace(/([<>*()?])/g, "\\$1");
   const query_search = search
     ? {
       $or: [
@@ -1910,7 +1912,7 @@ module.exports.getPrivacyPageContent  = async (req, res) => {
 
 module.exports.getMails = async (req, res) => {
   let { offset = 0, limit = 10, search, type = 0, active, direction } = req.query;
-  
+  search = search.replace(/([<>*()?])/g, "\\$1");
   const query = 
     {
       $and: [

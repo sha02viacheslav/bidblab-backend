@@ -109,8 +109,8 @@ module.exports.createUser = async (req, res) => {
 };
 
 module.exports.getMembers = async (req, res) => {
-
-  const { offset = 0, limit = 10, search, active, direction } = req.query;
+  let { offset = 0, limit = 10, search, active, direction } = req.query;
+  search = search.replace(/([<>*()?])/g, "\\$1");
   const query = search
     ? {
       $or: [
@@ -566,6 +566,7 @@ module.exports.addQuestion = async (req, res) => {
 
 module.exports.getQuestions = async (req, res) => {
   let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  search = search.replace(/([<>*()?])/g, "\\$1");
   filterTags = filterTags.trim();
   let tagFilterFlag = false;
   if(filterTags){
@@ -963,6 +964,7 @@ module.exports.changeDefaultCredits  = async (req, res) => {
 
 module.exports.getAnswers = async (req, res) => {
 	let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  search = search.replace(/([<>*()?])/g, "\\$1");
 	filterTags = filterTags.trim();
 	let tagFilterFlag = false;
 	if(filterTags){
@@ -971,12 +973,6 @@ module.exports.getAnswers = async (req, res) => {
 	let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
 	const query =	
 		{
-			// "answers": {
-			// 	"$elemMatch": {
-			// 		"answerer": req.query.userId,
-			// 		"answertype": "public",
-			// 	}
-			// },
 			$and: [
 				search?
 					{
@@ -1304,6 +1300,7 @@ module.exports.deleteFlags = async (req, res) => {
 
 module.exports.getPendingAuctions = async (req, res) => {
   let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  search = search.replace(/([<>*()?])/g, "\\$1");
   filterTags = filterTags.trim();
   let tagFilterFlag = false;
   if(filterTags){
@@ -1376,6 +1373,7 @@ module.exports.getPendingAuctions = async (req, res) => {
 
 module.exports.getProcessAuctions = async (req, res) => {
   let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  search = search.replace(/([<>*()?])/g, "\\$1");
   filterTags = filterTags.trim();
   let tagFilterFlag = false;
   if(filterTags){
@@ -1454,6 +1452,7 @@ module.exports.getProcessAuctions = async (req, res) => {
 
 module.exports.getClosedAuctions = async (req, res) => {
   let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  search = search.replace(/([<>*()?])/g, "\\$1");
   filterTags = filterTags.trim();
   let tagFilterFlag = false;
   if(filterTags){
@@ -2226,7 +2225,7 @@ module.exports.savePrivacy = async (req, res) => {
 
 module.exports.getMails = async (req, res) => {
   let { offset = 0, limit = 10, search, type = 0, active, direction } = req.query;
-  
+  search = search.replace(/([<>*()?])/g, "\\$1");
   const query = 
     {
       $and: [
