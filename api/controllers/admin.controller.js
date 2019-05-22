@@ -20,6 +20,22 @@ const Invite = mongoose.model('Invite');
 
 const ObjectId = mongoose.Types.ObjectId;
 
+const changeAuctionRole = async () => {
+  const auctions = await Auction.find().exec();
+  for(var index in auctions) {
+    if(auctions[index].starts > new Date()){
+      auctions[index].role = global.auctionRole.pending;
+    }
+    else if(auctions[index].closes > new Date()){
+      auctions[index].role = global.auctionRole.process;
+    }
+    else{
+      auctions[index].role = global.auctionRole.closed;
+    }
+    await auctions[index].save();
+  }
+};
+
 module.exports.createUser = async (req, res) => {
 	const schema = joi
 		.object({
@@ -1300,14 +1316,9 @@ module.exports.deleteFlags = async (req, res) => {
 };
 
 module.exports.getPendingAuctions = async (req, res) => {
-  let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  global.changeAuctionRole();
+  let { offset = 0, limit = 10, search, auctionType = 0, active, direction } = req.query; 
   search = search.replace(/([<>*()?])/g, "\\$1");
-  filterTags = filterTags.trim();
-  let tagFilterFlag = false;
-  if(filterTags){
-    tagFilterFlag = true;
-  }
-  let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
   const query = 
     {
       $and: [
@@ -1319,18 +1330,8 @@ module.exports.getPendingAuctions = async (req, res) => {
           },
         }:{},
         {
-          starts: { 
-            "$gt": new Date(),
-          }, 
+          role: auctionType
         },
-        // {
-        //   closes: { 
-        //     "$lt": new Date(),
-        //   }, 
-        // }
-        // tagFilterFlag?{
-        //     "tag": { "$in": interestArray }
-        // }:{},
       ],
     };
   
@@ -1373,14 +1374,9 @@ module.exports.getPendingAuctions = async (req, res) => {
 };
 
 module.exports.getProcessAuctions = async (req, res) => {
-  let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  global.changeAuctionRole();
+  let { offset = 0, limit = 10, search, auctionType = 0, active, direction } = req.query; 
   search = search.replace(/([<>*()?])/g, "\\$1");
-  filterTags = filterTags.trim();
-  let tagFilterFlag = false;
-  if(filterTags){
-    tagFilterFlag = true;
-  }
-  let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
   const query = 
     {
       $and: [
@@ -1392,18 +1388,8 @@ module.exports.getProcessAuctions = async (req, res) => {
           },
         }:{},
         {
-          starts: { 
-            "$lte": new Date(),
-          }, 
+          role: auctionType
         },
-        {
-          closes: { 
-            "$gt": new Date(),
-          }, 
-        }
-        // tagFilterFlag?{
-        //     "tag": { "$in": interestArray }
-        // }:{},
       ],
     };
   
@@ -1452,14 +1438,9 @@ module.exports.getProcessAuctions = async (req, res) => {
 };
 
 module.exports.getClosedAuctions = async (req, res) => {
-  let { offset = 0, limit = 10, search, filterTags, active, direction } = req.query; 
+  global.changeAuctionRole();
+  let { offset = 0, limit = 10, search, auctionType = 0, active, direction } = req.query; 
   search = search.replace(/([<>*()?])/g, "\\$1");
-  filterTags = filterTags.trim();
-  let tagFilterFlag = false;
-  if(filterTags){
-    tagFilterFlag = true;
-  }
-  let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
   const query = 
     {
       $and: [
@@ -1471,10 +1452,8 @@ module.exports.getClosedAuctions = async (req, res) => {
           },
         }:{},
         {
-          closes: { 
-            "$lte": new Date(),
-          }, 
-        }
+          role: auctionType
+        },
         // tagFilterFlag?{
         //     "tag": { "$in": interestArray }
         // }:{},
@@ -1598,6 +1577,7 @@ module.exports.addAuction = async (req, res) => {
         .required(),
       starts: joi
         .date()
+        .min(new Date())
         .required(),
       closes: joi
         .date()
@@ -1643,6 +1623,8 @@ module.exports.addAuction = async (req, res) => {
       data: newAuction,
     });
   }
+
+  result.value.role = global.data().auctionRole.pending;
   result.value.auctionDetail = req.body.auctionDetail;
   const newAuction = await Auction.create(result.value);
   
@@ -1739,7 +1721,16 @@ module.exports.updateAuction = async (req, res) => {
       data: null,
     });
   }
-  
+
+  if(result.value.starts > new Date()){
+    result.value.role = global.data().auctionRole.pending;
+  }
+  else if(result.value.closes < new Date()){
+    result.value.role = global.data().auctionRole.process;
+  }
+  else{
+    result.value.role = global.data().auctionRole.closed;
+  }
   result.value.auctionDetail = req.body.auctionDetail;
   result.value.updatedAt = moment().toDate();
   const newAuction = await Auction.findByIdAndUpdate(
@@ -1750,7 +1741,7 @@ module.exports.updateAuction = async (req, res) => {
     { new: true },
   )
     .exec();
-  
+
   if(newAuction){
     for(var index = 0; newAuction.auctionPicture[index]; index++) {
       await fs.remove(path.resolve('./', newAuction.auctionPicture[index]));
@@ -2240,16 +2231,16 @@ module.exports.getMails = async (req, res) => {
         }: {},
         {
           $or: [
-            type & (global.mailRole.inbox)? {
-              role: global.mailRole.sent,
+            type & (global.data().mailRole.inbox)? {
+              role: global.data().mailRole.sent,
               "recievers": null,
             }: { _id: null},
-            type & (global.mailRole.sent)? {
-              role: global.mailRole.sent,
+            type & (global.data().mailRole.sent)? {
+              role: global.data().mailRole.sent,
               sender: null,
             }: { _id: null},
-            type & (global.mailRole.archived)? {
-              role: global.mailRole.archived,
+            type & (global.data().mailRole.archived)? {
+              role: global.data().mailRole.archived,
               sender: null,
             }: { _id: null},
           ]
@@ -2351,7 +2342,7 @@ module.exports.sendMessage = async (req, res) => {
   result.value.sender = null;
   result.value.subject = req.body.subject.trim();
   result.value.message = req.body.message.trim();
-  result.value.role = global.mailRole.sent;
+  result.value.role = global.data().mailRole.sent;
   result.value.recievers = recievers[0].recieversId;
   const newMail = await Mail.create(result.value);
 
@@ -2412,7 +2403,7 @@ module.exports.archiveMessage = async (req, res) => {
   result.value.sender = null;
   result.value.subject = req.body.subject.trim();
   result.value.message = req.body.message.trim();
-  result.value.role = global.mailRole.archived;
+  result.value.role = global.data().mailRole.archived;
   result.value.recievers = recievers[0].recieversId;
   const newMail = await Mail.create(result.value);
 

@@ -67,8 +67,8 @@ const auctionSchema = mongoose.Schema({
         default: Date.now,
     },
     role: {
-      type: String,
-      default: "activate",
+      type: Number,
+      default: 0,
     },
     bids: [bidSchema],
     createdAt: {

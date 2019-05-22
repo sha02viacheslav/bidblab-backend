@@ -1413,28 +1413,31 @@ module.exports.getDefaultCredits  = async (req, res) => {
 }
 
 module.exports.getAuctions = async (req, res) => {
+  global.changeAuctionRole();
+  let { offset = 0, limit = 10, search, auctionType = 0 } = req.query;
+  search = search.replace(/([<>*()?])/g, "\\$1");
   const query = {
-    starts: { $lt: new Date()}
+    role: auctionType
   };
-
-  
-	// const start = Number(limit) * Number(offset);
-	// const size = Number(limit);
+  const start = Number(limit) * Number(offset);
+  const size = Number(limit);
   
   const totalAuctionsCount = await Auction.count(query).exec();
   const auctions = await  Auction.find(query)
-   .lean()
-  .populate({
-    path: 'auctioner',
-    select:
-    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  })
-  .populate({
-    path: 'bids.bidder',
-    select:
-    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  })
-  .exec();
+    .lean()
+    .skip(start)
+    .limit(size)
+    .populate({
+      path: 'auctioner',
+      select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'bids.bidder',
+      select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
 
   for( var key in auctions){
     auctions[key].bids = [];
@@ -1449,25 +1452,33 @@ module.exports.getAuctions = async (req, res) => {
 	  },
 	});
 };
+
 module.exports.getAuctionsAfterLogin = async (req, res) => {
+  global.changeAuctionRole();
+  let { offset = 0, limit = 10, search, auctionType = 0 } = req.query;
+  search = search.replace(/([<>*()?])/g, "\\$1");
   const query = {
-    starts: { $lt: new Date()}
+    role: auctionType
   };
+  const start = Number(limit) * Number(offset);
+  const size = Number(limit);
 
   const totalAuctionsCount = await Auction.count(query).exec();
   const auctions = await  Auction.find(query)
-   .lean()
-  .populate({
-    path: 'auctioner',
-    select:
-    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  })
-  .populate({
-    path: 'bids.bidder',
-    select:
-    '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-  })
-  .exec();
+    .lean()
+    .skip(start)
+    .limit(size)
+    .populate({
+      path: 'auctioner',
+      select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'bids.bidder',
+      select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
 
   for( var key in auctions){
     auctions[key] = await module.exports.checkBids(auctions[key]);
@@ -1490,6 +1501,12 @@ module.exports.getAuctionsAfterLogin = async (req, res) => {
 };
 
 module.exports.getBiddingAuctions = async (req, res) => {
+  global.changeAuctionRole();
+  let { offset = 0, limit = 10, search, auctionType = 0 } = req.query;
+  search = search.replace(/([<>*()?])/g, "\\$1");
+  const start = Number(limit) * Number(offset);
+  const size = Number(limit);
+
   const query = {
     $and: [
       {
@@ -1500,19 +1517,16 @@ module.exports.getBiddingAuctions = async (req, res) => {
         }
       },
       {
-        "starts": {
-          "$lt": new Date()
-        }
+        role: auctionType
       },
     ],
   };
   
-	// const start = Number(limit) * Number(offset);
-	// const size = Number(limit);
-  
   const totalAuctionsCount = await Auction.count(query).exec();
   const auctions = await  Auction.find(query)
     .lean()
+    .skip(start)
+    .limit(size)
     .populate({
       path: 'auctioner',
       select:
@@ -1914,7 +1928,7 @@ module.exports.getMails = async (req, res) => {
   let { offset = 0, limit = 10, search, type = 0, active, direction } = req.query;
   search = search.replace(/([<>*()?])/g, "\\$1");
 
-  console.log(global.mailRole);
+  console.log(global.data().mailRole);
   const query = 
     {
       $and: [
@@ -1927,18 +1941,18 @@ module.exports.getMails = async (req, res) => {
         }: {},
         {
           $or: [
-            type & (global.mailRole.inbox)? {
-              role: global.mailRole.sent,
+            type & (global.data().mailRole.inbox)? {
+              role: global.data().mailRole.sent,
               "recievers": {
                 "$elemMatch": { $eq: ObjectId(req.decodedToken.user._id)}
               },
             }: { _id: null},
-            type & (global.mailRole.sent)? {
-              role: global.mailRole.sent,
+            type & (global.data().mailRole.sent)? {
+              role: global.data().mailRole.sent,
               sender: req.decodedToken.user._id,
             }: { _id: null},
-            type & (global.mailRole.archived)? {
-              role: global.mailRole.archived,
+            type & (global.data().mailRole.archived)? {
+              role: global.data().mailRole.archived,
               sender: req.decodedToken.user._id,
             }: { _id: null},
           ]
@@ -2015,7 +2029,7 @@ module.exports.sendMessage = async (req, res) => {
   result.value.sender = req.decodedToken.user._id;
   result.value.subject = req.body.subject.trim();
   result.value.message = req.body.message.trim();
-  result.value.role = global.mailRole.sent;
+  result.value.role = global.data().mailRole.sent;
   result.value.recievers = null;
   const newMail = await Mail.create(result.value);
 
@@ -2047,7 +2061,7 @@ module.exports.archiveMessage = async (req, res) => {
   result.value.sender = req.decodedToken.user._id;
   result.value.subject = req.body.subject.trim();
   result.value.message = req.body.message.trim();
-  result.value.role = global.mailRole.archived;
+  result.value.role = global.data().mailRole.archived;
   result.value.recievers = null;
   const newMail = await Mail.create(result.value);
 
