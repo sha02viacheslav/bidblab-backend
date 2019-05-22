@@ -67,7 +67,6 @@ const upload_profile = (folder, allowedTypes) => (req, res, next) =>
     'file',
   )(req, res, next);
 
-
 const upload_question = (folder, allowedTypes) => (req, res, next) =>
   multer(`${folder}`, allowedTypes).single(
     'file',

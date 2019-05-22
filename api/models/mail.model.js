@@ -11,12 +11,10 @@ const mailSchema = mongoose.Schema({
   }],
   subject: {
     type: String,
-    required: true,
     trim: true,
   },
   message: {
     type: String,
-    required: true,
     trim: true,
   },
   createdAt: {

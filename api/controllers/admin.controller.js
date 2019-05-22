@@ -5,6 +5,7 @@ const path = require('path');
 const Validations = require('../utils/validations');
 const Encryption = require('../utils/encryption');
 const config = require('../config');
+const global = require('../global');
 const fs = require('fs-extra');
 
 const User = mongoose.model('User');
@@ -2238,16 +2239,16 @@ module.exports.getMails = async (req, res) => {
         }: {},
         {
           $or: [
-            type & (1 << 0)? {
-              role: 1 << 1,
+            type & (global.mailRole.inbox)? {
+              role: global.mailRole.sent,
               "recievers": null,
             }: { _id: null},
-            type & (1 << 1)? {
-              role: 1 << 1,
+            type & (global.mailRole.sent)? {
+              role: global.mailRole.sent,
               sender: null,
             }: { _id: null},
-            type & (1 << 2)? {
-              role: 1 << 2,
+            type & (global.mailRole.archived)? {
+              role: global.mailRole.archived,
               sender: null,
             }: { _id: null},
           ]
@@ -2308,14 +2309,6 @@ module.exports.sendMessage = async (req, res) => {
   
   const schema = joi
     .object({
-      subject: joi
-        .string()
-        .trim()
-        .required(),
-      message: joi
-        .string()
-        .trim()
-        .required(),
     })
     .options({
       stripUnknown: true,
@@ -2328,9 +2321,7 @@ module.exports.sendMessage = async (req, res) => {
       data: null,
     });
   }
-  result.value.sender = null;
-  result.value.role = 1 << 1;
-  
+
   var recieversName = req.body.recievers.split(',');
   const recievers = await User.aggregate([
     {
@@ -2348,6 +2339,18 @@ module.exports.sendMessage = async (req, res) => {
       }
     },
   ]).exec();
+  if (!recievers.length) {
+    return res.status(422).json({
+      msg: 'You must select valid username.',
+      err: null,
+      data: null,
+    });
+  }
+
+  result.value.sender = null;
+  result.value.subject = req.body.subject.trim();
+  result.value.message = req.body.message.trim();
+  result.value.role = global.mailRole.sent;
   result.value.recievers = recievers[0].recieversId;
   const newMail = await Mail.create(result.value);
 
@@ -2395,7 +2398,7 @@ module.exports.archiveMessage = async (req, res) => {
   }
 
   result.value.sender = null;
-  result.value.role = 1 << 2;
+  result.value.role = global.mailRole.archived;
   
   var recieversName = req.body.recievers.split(',');
   const recievers = await User.aggregate([

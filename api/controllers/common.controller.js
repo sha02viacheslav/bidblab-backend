@@ -2,11 +2,10 @@ const mongoose = require('mongoose');
 const joi = require('joi');
 const Validations = require('../utils/validations');
 const config = require('../config');
+const global = require('../global');
 const fs = require('fs-extra');
-
 const moment = require('moment');
 const path = require('path');
-
 const requestIp = require('request-ip');
 
 const Question = mongoose.model('Question');
@@ -18,7 +17,6 @@ const Auction = mongoose.model('Auction');
 const Mail = mongoose.model('Mail');
 const Sitemanager = mongoose.model('Sitemanager');
 const Invite = mongoose.model('Invite');
-
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -33,6 +31,7 @@ const removeProfileOfPrivate = (question) => {
 module.exports.getQuestions = async (req, res) => {
   let { offset = 0, limit = 10, search } = req.query;
   search = search.replace(/([<>*()?])/g, "\\$1");
+  console.log('offset=',offset, 'limit=', limit, 'search=', search);
   const query = search
     ? {
       $or: [
@@ -1913,6 +1912,8 @@ module.exports.getPrivacyPageContent  = async (req, res) => {
 module.exports.getMails = async (req, res) => {
   let { offset = 0, limit = 10, search, type = 0, active, direction } = req.query;
   search = search.replace(/([<>*()?])/g, "\\$1");
+
+  console.log(global.mailRole);
   const query = 
     {
       $and: [
@@ -1925,18 +1926,18 @@ module.exports.getMails = async (req, res) => {
         }: {},
         {
           $or: [
-            type & (1 << 0)? {
-              role: 1 << 1,
+            type & (global.mailRole.inbox)? {
+              role: global.mailRole.sent,
               "recievers": {
                 "$elemMatch": { $eq: ObjectId(req.decodedToken.user._id)}
               },
             }: { _id: null},
-            type & (1 << 1)? {
-              role: 1 << 1,
+            type & (global.mailRole.sent)? {
+              role: global.mailRole.sent,
               sender: req.decodedToken.user._id,
             }: { _id: null},
-            type & (1 << 2)? {
-              role: 1 << 2,
+            type & (global.mailRole.archived)? {
+              role: global.mailRole.archived,
               sender: req.decodedToken.user._id,
             }: { _id: null},
           ]
@@ -1997,14 +1998,6 @@ module.exports.sendMessage = async (req, res) => {
   
   const schema = joi
     .object({
-      subject: joi
-        .string()
-        .trim()
-        .required(),
-      message: joi
-        .string()
-        .trim()
-        .required(),
     })
     .options({
       stripUnknown: true,
@@ -2017,8 +2010,11 @@ module.exports.sendMessage = async (req, res) => {
       data: null,
     });
   }
+
   result.value.sender = req.decodedToken.user._id;
-  result.value.role = 1 << 1;
+  result.value.subject = req.body.subject.trim();
+  result.value.message = req.body.message.trim();
+  result.value.role = global.mailRole.sent;
   result.value.recievers = null;
   const newMail = await Mail.create(result.value);
 
@@ -2054,7 +2050,7 @@ module.exports.archiveMessage = async (req, res) => {
   }
 
   result.value.sender = req.decodedToken.user._id;
-  result.value.role = 1 << 2;
+  result.value.role = global.mailRole.archived;
   result.value.recievers = null;
   const newMail = await Mail.create(result.value);
 
