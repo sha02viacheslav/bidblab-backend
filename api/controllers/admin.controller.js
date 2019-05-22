@@ -2377,17 +2377,11 @@ module.exports.archiveMessage = async (req, res) => {
   
   const schema = joi
     .object({
-      subject: joi
-        .string()
-        .trim(),
-      message: joi
-        .string()
-        .trim(),
     })
     .options({
       stripUnknown: true,
     });
-    const result = schema.validate(req.body);
+  const result = schema.validate(req.body);
 
   if (result.error) {
     return res.status(422).json({
@@ -2397,9 +2391,6 @@ module.exports.archiveMessage = async (req, res) => {
     });
   }
 
-  result.value.sender = null;
-  result.value.role = global.mailRole.archived;
-  
   var recieversName = req.body.recievers.split(',');
   const recievers = await User.aggregate([
     {
@@ -2417,6 +2408,10 @@ module.exports.archiveMessage = async (req, res) => {
       }
     },
   ]).exec();
+  result.value.sender = null;
+  result.value.subject = req.body.subject.trim();
+  result.value.message = req.body.message.trim();
+  result.value.role = global.mailRole.archived;
   result.value.recievers = recievers[0].recieversId;
   const newMail = await Mail.create(result.value);
 

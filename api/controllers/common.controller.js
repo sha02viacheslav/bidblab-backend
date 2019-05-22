@@ -2029,12 +2029,6 @@ module.exports.archiveMessage = async (req, res) => {
   
   const schema = joi
     .object({
-      subject: joi
-        .string()
-        .trim(),
-      message: joi
-        .string()
-        .trim(),
     })
     .options({
       stripUnknown: true,
@@ -2050,6 +2044,8 @@ module.exports.archiveMessage = async (req, res) => {
   }
 
   result.value.sender = req.decodedToken.user._id;
+  result.value.subject = req.body.subject.trim();
+  result.value.message = req.body.message.trim();
   result.value.role = global.mailRole.archived;
   result.value.recievers = null;
   const newMail = await Mail.create(result.value);
