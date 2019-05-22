@@ -2233,15 +2233,20 @@ module.exports.getMails = async (req, res) => {
           $or: [
             type & (global.data().mailRole.inbox)? {
               role: global.data().mailRole.sent,
+              sender: {$ne: null},
               "recievers": null,
             }: { _id: null},
             type & (global.data().mailRole.sent)? {
               role: global.data().mailRole.sent,
               sender: null,
+              "recievers": {$ne: null},
             }: { _id: null},
             type & (global.data().mailRole.archived)? {
               role: global.data().mailRole.archived,
               sender: null,
+            }: { _id: null},
+            type & (global.data().mailRole.trash)? {
+              role: global.data().mailRole.adminTrash
             }: { _id: null},
           ]
         }
@@ -2298,7 +2303,6 @@ module.exports.getMails = async (req, res) => {
 };
 
 module.exports.sendMessage = async (req, res) => {
-  
   const schema = joi
     .object({
     })
@@ -2343,8 +2347,13 @@ module.exports.sendMessage = async (req, res) => {
   result.value.subject = req.body.subject.trim();
   result.value.message = req.body.message.trim();
   result.value.role = global.data().mailRole.sent;
-  result.value.recievers = recievers[0].recieversId;
   const newMail = await Mail.create(result.value);
+  var recieversId = recievers[0].recieversId;
+  for(var index in recieversId){
+    let reciever = newMail.recievers.create({reciever: recieversId[index], role: 0});
+    newMail.recievers.push(reciever);
+    await newMail.save();
+  }
 
   const mailgun = require("mailgun-js");
   const DOMAIN = 'verify.bidblab.com';
@@ -2365,47 +2374,13 @@ module.exports.sendMessage = async (req, res) => {
   });
 };
 
-module.exports.archiveMessage = async (req, res) => {
+module.exports.applyRoleOfMails = async (req, res) => {
   
-  const schema = joi
-    .object({
-    })
-    .options({
-      stripUnknown: true,
-    });
-  const result = schema.validate(req.body);
-
-  if (result.error) {
-    return res.status(422).json({
-      msg: result.error.details[0].message,
-      err: null,
-      data: null,
-    });
+  const mails = await Mail.find({"_id": { $in: req.body }}).exec();
+  for(var index in mails) {
+    mails[index].role = global.data().mailRole.adminTrash;
+    await mails[index].save();
   }
-
-  var recieversName = req.body.recievers.split(',');
-  const recievers = await User.aggregate([
-    {
-      $match: {
-        "username" : {
-          $in: recieversName
-        }
-      }
-    },
-    {
-      $group: {
-        recieversEmail: { "$push": "$email" },
-        recieversId: { "$push": "$_id" },
-        "_id": null,
-      }
-    },
-  ]).exec();
-  result.value.sender = null;
-  result.value.subject = req.body.subject.trim();
-  result.value.message = req.body.message.trim();
-  result.value.role = global.data().mailRole.archived;
-  result.value.recievers = recievers[0].recieversId;
-  const newMail = await Mail.create(result.value);
 
   res.status(200).json({
     err: null,
@@ -2413,4 +2388,53 @@ module.exports.archiveMessage = async (req, res) => {
     data: "succes"
   });
 };
+
+// module.exports.archiveMessage = async (req, res) => {
+  
+//   const schema = joi
+//     .object({
+//     })
+//     .options({
+//       stripUnknown: true,
+//     });
+//   const result = schema.validate(req.body);
+
+//   if (result.error) {
+//     return res.status(422).json({
+//       msg: result.error.details[0].message,
+//       err: null,
+//       data: null,
+//     });
+//   }
+
+//   var recieversName = req.body.recievers.split(',');
+//   const recievers = await User.aggregate([
+//     {
+//       $match: {
+//         "username" : {
+//           $in: recieversName
+//         }
+//       }
+//     },
+//     {
+//       $group: {
+//         recieversEmail: { "$push": "$email" },
+//         recieversId: { "$push": "$_id" },
+//         "_id": null,
+//       }
+//     },
+//   ]).exec();
+//   result.value.sender = null;
+//   result.value.subject = req.body.subject.trim();
+//   result.value.message = req.body.message.trim();
+//   result.value.role = global.data().mailRole.archived;
+//   result.value.recievers = recievers[0].recieversId;
+//   const newMail = await Mail.create(result.value);
+
+//   res.status(200).json({
+//     err: null,
+//     msg: 'Message was archived successfully.',
+//     data: "succes"
+//   });
+// };
 

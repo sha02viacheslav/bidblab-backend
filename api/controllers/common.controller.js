@@ -1943,18 +1943,19 @@ module.exports.getMails = async (req, res) => {
           $or: [
             type & (global.data().mailRole.inbox)? {
               role: global.data().mailRole.sent,
+              sender: null,
               "recievers": {
-                "$elemMatch": { $eq: ObjectId(req.decodedToken.user._id)}
+                "$elemMatch": { reciever: ObjectId(req.decodedToken.user._id) }
               },
             }: { _id: null},
             type & (global.data().mailRole.sent)? {
               role: global.data().mailRole.sent,
               sender: req.decodedToken.user._id,
             }: { _id: null},
-            type & (global.data().mailRole.archived)? {
-              role: global.data().mailRole.archived,
-              sender: req.decodedToken.user._id,
-            }: { _id: null},
+            // type & (global.data().mailRole.archived)? {
+            //   role: global.data().mailRole.archived,
+            //   sender: req.decodedToken.user._id,
+            // }: { _id: null},
           ]
         }
       ],
@@ -2064,6 +2065,23 @@ module.exports.archiveMessage = async (req, res) => {
   result.value.role = global.data().mailRole.archived;
   result.value.recievers = null;
   const newMail = await Mail.create(result.value);
+
+  res.status(200).json({
+    err: null,
+    msg: 'Message was archived successfully.',
+    data: "succes"
+  });
+};
+
+module.exports.applyRoleOfMails = async (req, res) => {
+  
+  const mails = await Mail.find({"_id": { "$in": req.body }}).exec();
+  for(var index in mails) {
+    if(mails[index].sender){
+      mails[index].role = global.data().mailRole.trash;
+    }
+    await mails[index].save();
+  }
 
   res.status(200).json({
     err: null,

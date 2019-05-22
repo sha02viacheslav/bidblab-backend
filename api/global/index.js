@@ -26,7 +26,8 @@ module.exports.data = () => {
       sent: 2,
       archived: 4,
       trash: 8,
-      all: 15
+      adminTrash: 16,
+      all: 31
     },
     auctionRole: {
       pending: 1,
