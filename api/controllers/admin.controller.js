@@ -1889,7 +1889,8 @@ module.exports.internalGetMyCredits = async (userId) => {
           $or: [
             {"referrer": ObjectId(userId)},
             {"friendEmail": user.email},
-          ] 
+          ],
+          "success": true, 
         }
       },
       {
