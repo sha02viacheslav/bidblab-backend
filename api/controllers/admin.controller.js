@@ -2216,6 +2216,54 @@ module.exports.savePrivacy = async (req, res) => {
   });
 };
 
+module.exports.saveInvestor = async (req, res) => {
+  
+  const schema = joi
+    .object({
+      quillContent: joi
+        .string()
+        .trim()
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+  const updatedAbout = await Sitemanager.findOneAndUpdate(
+    { pageType: 'investor'},
+    {
+      $set: result.value,
+    },
+		{
+			new: true,
+      upsert: true 
+		},
+  )
+  .lean()
+  .exec();
+
+  if (!updatedAbout) {
+    return res.status(422).json({
+      msg: 'Investor Relations page was not found.',
+      err: null,
+      data: null,
+    });
+  }
+  
+  res.status(200).json({
+    err: null,
+    msg: 'Privacy page was changed successfully.',
+    data: "succes"
+  });
+};
+
 module.exports.getMails = async (req, res) => {
   let { offset = 0, limit = 10, search, type = 0, active, direction } = req.query;
   search = search.replace(/([<>*()?])/g, "\\$1");

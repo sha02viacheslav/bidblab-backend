@@ -348,6 +348,12 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.savePrivacy),
 );
+router.post(
+  '/admin/saveInvestor',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.saveInvestor),
+);
 // ----------------------------------User-------------------------------------
 router.patch(
   '/user/updateProfile',
@@ -486,6 +492,10 @@ router.get(
 router.get(
   '/common/getPrivacyPageContent',
   errorHandler(commonCtrl.getPrivacyPageContent),
+);
+router.get(
+  '/common/getInvestorPageContent',
+  errorHandler(commonCtrl.getInvestorPageContent),
 );
 // ------------Mail------------
 router.get(

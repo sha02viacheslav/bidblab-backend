@@ -1923,6 +1923,23 @@ module.exports.getPrivacyPageContent  = async (req, res) => {
 	});
 }
 
+module.exports.getInvestorPageContent  = async (req, res) => {
+	const sitemanagers = await Sitemanager.find({ pageType: 'investor'}).exec();
+  
+	if (!sitemanagers.length) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Site manager was not found.',
+			data: null,
+		});
+	}
+
+	res.status(200).json({
+		err: null,
+		msg: 'Site manager was found successfully.',
+		data: sitemanagers[0],
+	});
+}
 
 module.exports.getMails = async (req, res) => {
   let { offset = 0, limit = 10, search, type = 0, active, direction } = req.query;
