@@ -1559,6 +1559,45 @@ module.exports.getBiddingAuctions = async (req, res) => {
 	});
 };
 
+module.exports.getAuctionById = async (req, res) => {
+  global.changeAuctionRole();
+
+  if (!Validations.isObjectId(req.params.auctionId)) {
+    return res.status(422).json({
+      err: null,
+      msg: 'AuctionId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+ 
+  let auction = await  Auction.findById(req.params.auctionId)
+    .lean()
+    .populate({
+      path: 'auctioner',
+      select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .populate({
+      path: 'bids.bidder',
+      select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    })
+    .exec();
+
+  auction = await module.exports.checkBids(auction);
+  if(auction.role != global.data().auctionRole.closed){
+    auction = await module.exports.removeOtherBids(req.decodedToken.user._id, auction);
+  }
+  
+	res.status(200).json({
+	  err: null,
+	  msg: 'Auction retrieved successfully.',
+	  data: {
+      auction
+	  },
+	});
+};
+
 module.exports.checkBids = async (auction) => {
 
   let tempBids = auction.bids;

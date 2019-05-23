@@ -468,6 +468,10 @@ router.get('/common/getBiddingAuctions',
   isAuthenticated,
   errorHandler(commonCtrl.getBiddingAuctions)
 );
+router.get('/common/getAuctionById/:auctionId', 
+  isAuthenticated,
+  errorHandler(commonCtrl.getAuctionById)
+);
 router.post(
   '/common/addBid/:auctionId',
   isAuthenticated,
