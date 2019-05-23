@@ -1482,10 +1482,7 @@ module.exports.getAuctionsAfterLogin = async (req, res) => {
 
   for( var key in auctions){
     auctions[key] = await module.exports.checkBids(auctions[key]);
-    if(auctions[key].closes < new Date()){
-      auctions[key].role = "closed";
-    }
-    else{
+    if(auctions[key].role != global.data().auctionRole.closed){
       auctions[key] = await module.exports.removeOtherBids(req.decodedToken.user._id, auctions[key]);
     }
   }
@@ -1541,10 +1538,7 @@ module.exports.getBiddingAuctions = async (req, res) => {
 
   for( var key in auctions){
     auctions[key] = await module.exports.checkBids(auctions[key]);
-    if(auctions[key].closes < new Date()){
-      auctions[key].role = "closed";
-    }
-    else{
+    if(auctions[key].role != global.data().auctionRole.closed){
       auctions[key] = await module.exports.removeOtherBids(req.decodedToken.user._id, auctions[key]);
     }
   }
