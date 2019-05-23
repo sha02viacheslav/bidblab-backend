@@ -5,12 +5,15 @@ io.sockets.on('connection', (socket) => {
     socket.join(room);
   });
   socket.on('createdData', (data) => {
+    socket.broadcast.emit('createdData', data);
     socket.emit('createdData', data);
   });
   socket.on('updatedData', (data) => {
+    socket.broadcast.emit('updatedData', data);
     socket.emit('updatedData', data);
   });
   socket.on('deletedData', (data) => {
+    socket.broadcast.emit('deletedData', data);
     socket.emit('deletedData', data);
   });
   socket.on('notification', (data) => {
