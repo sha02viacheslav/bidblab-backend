@@ -1620,7 +1620,7 @@ module.exports.addAuction = async (req, res) => {
     res.status(200).json({
       err: null,
       msg: 'AuctionID is invalid. Try again.',
-      data: newAuction,
+      data: null,
     });
   }
 
@@ -1644,7 +1644,7 @@ module.exports.addAuction = async (req, res) => {
     res.status(200).json({
       err: null,
       msg: 'Auction was not added.',
-      data: newAuction,
+      data: null,
     });
   }
 
@@ -1758,7 +1758,7 @@ module.exports.updateAuction = async (req, res) => {
     return res.status(200).json({
       err: null,
       msg: 'Auction was not updated.',
-      data: newAuction,
+      data: null,
     });
   }
 
@@ -1788,19 +1788,17 @@ module.exports.getDataForAddAuction = async (req, res) => {
   )
   .exec();
 
-  if(!auction){
-    return res.status(200).json({
-      err: null,
-      msg: 'Auctions was not found.',
-      data: null
-    });
+  let maxAuctionSerial = 0;
+  if(auction.length && auction[0].maxAuctionSerial){
+    maxAuctionSerial = auction[0].maxAuctionSerial;
   }
+  maxAuctionSerial++;
   
   res.status(200).json({
     err: null,
     msg: 'Auctions was suspended successfully.',
     data: {
-      finalAuctionSerial: auction[0].maxAuctionSerial,
+      finalAuctionSerial: maxAuctionSerial,
     },
   });
 };
