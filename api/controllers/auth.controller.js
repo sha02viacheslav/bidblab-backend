@@ -141,7 +141,9 @@ module.exports.signup = async (req, res) => {
   res.status(201).json({
     err: null,
     msg: `Welcome, ${newUser.username}, your registration was successful.`,
-    data: null,
+    data: {
+      user: newUser
+    },
   });
 };
 
