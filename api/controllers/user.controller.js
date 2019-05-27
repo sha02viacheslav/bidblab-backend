@@ -10,49 +10,31 @@ const User = mongoose.model('User');
 module.exports.updateProfile = async (req, res) => {
 	const schema = joi
 		.object({
-			firstName: joi.string().trim(),
-			lastName: joi.string().trim(),
+			firstName: joi
+				.string()
+				.trim()
+				.required(),
+			lastName: joi
+				.string()
+				.trim()
+				.required(),
 			username: joi
 				.string()
 				.trim()
 				.lowercase()
 				.alphanum()
 				.min(3)
-				.max(30),
+				.max(30)
+				.required(),
 			email: joi
 				.string()
 				.trim()
 				.lowercase()
-				.email(),
-			aboutme: joi
-				.string(),
-			phone: joi
-				.string(),
-			tags: joi
-				.array()
-				.items(
-					joi.string()
-				),
+				.email()
+				.required(),
 			birthday: joi
-				.date(),
-			gender: joi
-				.string(),
-			physicaladdress: joi
-				.string(),
-			physicalcity: joi
-				.string(),
-			physicalstate: joi
-				.string(),
-			physicalzipcode: joi
-				.string(),
-			shippingaddress: joi
-				.string(),
-			shippingcity: joi
-				.string(),
-			shippingstate: joi
-				.string(),
-			shippingzipcode: joi
-				.string(),
+				.date()
+				.required(),
 		})
 		.options({
 			stripUnknown: true,
@@ -96,6 +78,18 @@ module.exports.updateProfile = async (req, res) => {
 	else{
     result.value.profilePicture = ''
 	}
+	result.value.phone = req.body.phone;
+	result.value.gender = req.body.gender;
+	result.value.aboutme = req.body.aboutme;
+	result.value.tags = req.body.tags;
+	result.value.physicaladdress = req.body.physicaladdress;
+	result.value.physicalcity = req.body.physicalcity;
+	result.value.physicalstate = req.body.physicalstate;
+	result.value.physicalzipcode = req.body.physicalzipcode;
+	result.value.shippingaddress = req.body.shippingaddress;
+	result.value.shippingcity = req.body.shippingcity;
+	result.value.shippingstate = req.body.shippingstate;
+	result.value.shippingzipcode = req.body.shippingzipcode;
 	result.value.updatedAt = moment().toDate();
 	let updatedUser = await User.findByIdAndUpdate(
 			req.decodedToken.user._id, {

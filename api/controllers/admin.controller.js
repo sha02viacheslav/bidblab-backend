@@ -286,7 +286,10 @@ module.exports.updateUser = async (req, res) => {
 				.trim()
 				.lowercase()
 				.email()
-				.required(),
+        .required(),
+			birthday: joi
+      .date()
+      .required(),
 		})
 		.options({
 			stripUnknown: true,
@@ -329,7 +332,6 @@ module.exports.updateUser = async (req, res) => {
   
 	result.value.verified = true;
 	result.value.phone = req.body.phone;
-	result.value.birthday = req.body.birthday;
 	result.value.gender = req.body.gender;
 	result.value.aboutme = req.body.aboutme;
 	result.value.tags = req.body.tags;
