@@ -35,6 +35,11 @@ module.exports.updateProfile = async (req, res) => {
 			birthday: joi
 				.date()
 				.required(),
+			tags: joi
+				.array()
+				.items(
+					joi.string()
+				),
 		})
 		.options({
 			stripUnknown: true,
@@ -81,7 +86,6 @@ module.exports.updateProfile = async (req, res) => {
 	result.value.phone = req.body.phone;
 	result.value.gender = req.body.gender;
 	result.value.aboutme = req.body.aboutme;
-	result.value.tags = req.body.tags;
 	result.value.physicaladdress = req.body.physicaladdress;
 	result.value.physicalcity = req.body.physicalcity;
 	result.value.physicalstate = req.body.physicalstate;
