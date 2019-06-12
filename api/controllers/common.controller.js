@@ -757,7 +757,6 @@ module.exports.addQuestion = async (req, res) => {
   if(defaultCredits && defaultCredits.defaultQuestionCredit){
     result.value.credit = defaultCredits.defaultQuestionCredit;
   }
-  
 
   if(req.file){
     const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
@@ -1608,11 +1607,10 @@ module.exports.checkBids = async (auction) => {
       }
     }
   }
-  auction.maxUniqueBid = maxUniqueBid;
+  auction.maxUniqueBid = maxUniqueBid.bidder;
   if(maxUniqueBid){
-    let temp = auction.bids.find( item => item._id == auction.maxUniqueBid._id);
+    let temp = auction.bids.find( item => item._id == maxUniqueBid._id);
     temp.bidStatus |= 1<<1;
-    console.log("temp=", temp);
   }
 
   return auction;
