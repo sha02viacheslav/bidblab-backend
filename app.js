@@ -39,6 +39,12 @@ if (process.env.NODE_ENV !== 'production') {
     express.static(path.join(__dirname, config.MEDIA_FOLDER)),
   );
 }
+else {
+  app.use(
+    `/${config.MEDIA_FOLDER}`,
+    express.static(path.join(__dirname, config.MEDIA_FOLDER)),
+  );
+}
 app.use('/api', routes);
 
 // 500 internal server error handler

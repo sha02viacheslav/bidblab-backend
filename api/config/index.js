@@ -15,7 +15,7 @@ module.exports = {
   MONGO_URI:
     process.env.MONGO_URI ||
     (process.env.NODE_ENV === 'production'
-      ? 'mongodb://mongo:27017/bidblab'
+      ? 'mongodb://localhost:27017/bidblab'
       : 'mongodb://localhost:27017/bidblab'),
   MAILER: {
     from: 'Bidblab <support@bidblab.com>',
