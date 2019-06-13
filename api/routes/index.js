@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const multer = require('../config/multer');
 const authCtrl = require('../controllers/auth.controller');
 const fileCtrl = require('../controllers/file.controller');
-const userCtrl = require('../controllers/user.controller');
 const adminCtrl = require('../controllers/admin.controller');
 const commonCtrl = require('../controllers/common.controller');
 
@@ -112,7 +111,12 @@ router.patch(
   isAuthenticated,
   errorHandler(authCtrl.changePassword),
 );
-
+router.patch(
+  '/auth/updateProfile',
+  isAuthenticated,
+  upload_profile('profilePictures', ['image']),
+  errorHandler(authCtrl.updateProfile),
+);
 // ----------------------------------Admin-------------------------------------
 // ------------User------------
 router.post(
@@ -354,14 +358,6 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.saveInvestor),
 );
-// ----------------------------------User-------------------------------------
-router.patch(
-  '/user/updateProfile',
-  isAuthenticated,
-  upload_profile('profilePictures', ['image']),
-  errorHandler(userCtrl.updateProfile),
-);
-
 // --------------------------------Common-------------------------------------
 router.get('/common/getQuestions', errorHandler(commonCtrl.getQuestions));
 router.get(
