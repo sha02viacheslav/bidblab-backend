@@ -27,5 +27,10 @@ module.exports = {
           : 'sandbox172690e9cd1e44c385681721a74d37fa.mailgun.org',
     },
   },
+  SQUARE: {
+    squareApplicationId: 'sandbox-sq0idp-pgtYItOt5ukOhAf3XVPULw',
+    squareAccessToken: 'EAAAEJe7x4H5Ln7aOHjRdyVK8kE4eLiniqcKGiHy7aoNmPDJlqR2g3zFxQhK-vZC',
+    squareLocationId: 'CBASEGeplV7kldOKRjfU1u8mZ5sgAQ'
+  },
   MEDIA_FOLDER: 'uploads',
 };

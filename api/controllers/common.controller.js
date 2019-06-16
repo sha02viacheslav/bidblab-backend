@@ -2224,3 +2224,37 @@ module.exports.invite = async (req, res) => {
     data: "succes"
   });
 };
+
+module.exports.squarePay = async (req, res) => {
+
+  var request_params = req.body;
+	console.log('payparam=', req.body);
+
+	var idempotency_key = require('crypto').randomBytes(64).toString('hex');
+
+	// Charge the customer's card
+	var transactions_api = new squareConnect.TransactionsApi();
+	var request_body = {
+		card_nonce: request_params.nonce,
+		amount_money: {
+			amount: 100, // $1.00 charge
+			currency: 'USD'
+		},
+		idempotency_key: idempotency_key
+	};
+	await transactions_api.charge(config.SQUARE.squareLocationId, request_body).then(function(data) {
+    var json= JSON.stringify(data);
+    res.status(200).json({
+      err: null,
+      msg: 'Payment Successful.',
+      data: json
+    });
+	}, function(error) {
+    res.status(200).json({
+      err: null,
+      msg: error.response.text,
+      data: null
+    });
+	});
+
+};

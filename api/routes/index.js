@@ -523,6 +523,11 @@ router.post(
   isAuthenticated,
   errorHandler(commonCtrl.invite),
 );
+router.post(
+  '/common/squarePay',
+  isAuthenticated,
+  errorHandler(commonCtrl.squarePay),
+);
 // -----------------------------------File-------------------------------------
 router.get(
   '/file/:parentFolder/:subFolder/:fileName',

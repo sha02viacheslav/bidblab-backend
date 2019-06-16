@@ -6,6 +6,7 @@ const path = require('path');
 const cors = require('cors');
 const compression = require('compression');
 const bodyParser = require('body-parser');
+squareConnect = require('square-connect');
 
 const routes = require('./api/routes');
 const config = require('./api/config');
@@ -15,7 +16,7 @@ const app = express();
 app.set('secret', config.SECRET);
 
 app.use(logger(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-const origins = process.env.NODE_ENV === 'production' ? ['https://bidblab.com', 
+const origins = process.env.NODE_ENV === 'production' ? ['https://bidblab.com',
                               'https://www.bidblab.com'] : ['http://localhost:4300',
                               'http://localhost:4200',
                               'http://localhost:4400'];
@@ -46,6 +47,13 @@ else {
   );
 }
 app.use('/api', routes);
+
+// Set Square Connect credentials
+var defaultClient = squareConnect.ApiClient.instance;
+
+// Configure OAuth2 access token for authorization: oauth2
+var oauth2 = defaultClient.authentications['oauth2'];
+oauth2.accessToken = config.SQUARE.squareAccessToken;
 
 // 500 internal server error handler
 app.use((err, req, res, next) => {
