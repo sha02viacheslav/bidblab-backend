@@ -367,7 +367,7 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
     .exec(),
   ]);
   const total_answers = resolvedPromises[0];
-  const answerTags = resolvedPromises[1][0].tags;
+  const answerTags = resolvedPromises[1][0]? resolvedPromises[1][0].tags : [];
   const answers = resolvedPromises[2];
 
   res.status(200).json({
