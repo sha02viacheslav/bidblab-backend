@@ -213,6 +213,7 @@ module.exports.getMembers = async (req, res) => {
       members[key].optionalImageCredits = credits.optionalImageCredits;
       members[key].answerCredits = credits.answerCredits;
       members[key].referalCredits = credits.referalCredits;
+      members[key].signupCredits = credits.signupCredits;
       members[key].loseCredits = credits.loseCredits;
     }
     members[key].totalQuestions = await Question.count( { "asker": members[key]._id } ).exec();
@@ -942,6 +943,9 @@ module.exports.changeDefaultCredits  = async (req, res) => {
 				.number()
 				.required(),
       defaultReferralCredit: joi
+				.number()
+				.required(),
+        defaultSignupCredit: joi
 				.number()
 				.required(),
 		})
@@ -1939,11 +1943,18 @@ module.exports.internalGetMyCredits = async (userId) => {
     }
   }
 
+  const defaultCredits = await Credit.findOne({ dataType: "credit"}).exec();
+  let signupCredits = 50;
+  if(defaultCredits && defaultCredits.defaultSignupCredit){
+    signupCredits = defaultCredits.defaultSignupCredit;
+  }
+
   return data = {
     questionCredits,
     optionalImageCredits,
     answerCredits,
     referalCredits,
+    signupCredits,
     loseCredits,
   };
 

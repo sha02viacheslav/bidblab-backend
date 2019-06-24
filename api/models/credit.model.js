@@ -25,6 +25,10 @@ const creditSchema = mongoose.Schema({
         type: Number,
         required: true,
     },
+    defaultSignupCredit: {
+        type: Number,
+        required: true,
+    },
   });
   
 mongoose.model('Credit', creditSchema);

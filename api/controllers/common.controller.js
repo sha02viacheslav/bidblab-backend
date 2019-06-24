@@ -1853,11 +1853,18 @@ module.exports.internalGetMyCredits = async (userId) => {
     }
   }
 
+  const defaultCredits = await Credit.findOne({ dataType: "credit"}).exec();
+  let signupCredits = 50;
+  if(defaultCredits && defaultCredits.defaultSignupCredit){
+    signupCredits = defaultCredits.defaultSignupCredit;
+  }
+
   return data = {
     questionCredits,
     optionalImageCredits,
     answerCredits,
     referalCredits,
+    signupCredits,
     loseCredits,
   };
 
