@@ -60,6 +60,10 @@ const answerSchema = mongoose.Schema({
     default: Date.now,
   },
   updatedAt: Date,
+  role: {
+    type: String,
+    default: "activate",
+  },
 });
 
 const questionSchema = mongoose.Schema({

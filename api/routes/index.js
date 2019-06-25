@@ -201,6 +201,12 @@ router.delete(
   isAdmin,
   errorHandler(adminCtrl.deleteAnswer),
 );
+router.post(
+  '/admin/changeAnswersRole/:roleType',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.changeAnswersRole),
+);
 // ------------Flag------------
 router.get(
   '/admin/getFlags',

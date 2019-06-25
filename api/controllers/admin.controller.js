@@ -939,6 +939,32 @@ module.exports.deleteAnswer = async (req, res) => {
   });
 };
 
+module.exports.changeAnswersRole = async (req, res) => {
+
+  let totalSuspendAnswers = 0;
+  const elementIds = req.body;
+  for(let index in elementIds){
+    let question = await Question.findById(elementIds[index].questionId).exec();
+    if (!question) {
+      continue;
+    }
+    let answer = question.answers.id(elementIds[index].answerId);
+    if (!answer) {
+      continue;
+    }
+    answer.role = req.params.roleType;
+    await question.save();
+    totalSuspendAnswers++;
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Answers were suspended successfully.',
+    data: {
+      totalSuspendAnswers
+    },
+  });
+};
+
 module.exports.changeDefaultCredits  = async (req, res) => {
 	const schema = joi
 		.object({
