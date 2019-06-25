@@ -513,9 +513,12 @@ module.exports.addQuestion = async (req, res) => {
         .required(),
       priority: joi
         .number()
+        .min(1)
+        .max(5)
         .required(),
       answerCredit: joi
         .number()
+        .min(0)
         .required(),
       tag: joi
         .string()
@@ -743,9 +746,12 @@ module.exports.updateQuestion = async (req, res) => {
         .max(500),
       priority: joi
         .number()
+        .min(1)
+        .max(5)
         .required(),
       answerCredit: joi
         .number()
+        .min(0)
         .required(),
       tag: joi
         .string()
