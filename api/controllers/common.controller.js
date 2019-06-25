@@ -31,7 +31,6 @@ const removeProfileOfPrivate = (question) => {
 module.exports.getQuestions = async (req, res) => {
   let { offset = 0, limit = 10, search } = req.query;
   search = search.replace(/([<>*()?])/g, "\\$1");
-  console.log('offset=',offset, 'limit=', limit, 'search=', search);
   const query = search
     ? {
       $or: [
@@ -50,26 +49,43 @@ module.exports.getQuestions = async (req, res) => {
 
   const resolvedPromises = await Promise.all([
     Question.count(query).exec(),
-    Question.find(query)
-      .lean()
-      .skip(start)
-      .limit(size)
-      .populate({
-        path: 'asker',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .populate({
-        path: 'answers.answerer',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .exec(),
-      
+    Question.aggregate([
+      { $match: query },
+      {
+        $addFields: {
+          orderScore: { $add: [{ $ifNull: [ "$priority", 3 ] }, "$credit"] } ,
+        }
+      },
+      {
+        $sort: {
+          orderScore: -1,
+          createdAt: -1
+        }
+      },
+      { $skip: start },
+      { $limit: size },
+    ])
+    .exec() 
   ]);
 
   const count = resolvedPromises[0];
   const questions = resolvedPromises[1];
+  await User.populate(
+    questions, 
+    {
+      path: 'answers.answerer',
+      select:
+        '-email -password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    }
+  );
+  await User.populate(
+    questions, 
+    {
+      path: 'asker',
+      select:
+        '-email -password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    }
+  );
 
   questions.forEach(question => {
     question.answers.sort((a,b) => {
@@ -81,14 +97,8 @@ module.exports.getQuestions = async (req, res) => {
       const temp2 = b_thumbupcnt - b_thumbdowncnt;
       return temp2 - temp1;
     }),
-    question.answers.forEach(function(item, index) {
-      if(index != 0){
-        // item.remove();
-      }
-    })
     removeProfileOfPrivate(question);
   });
-
 
   res.status(200).json({
     err: null,
