@@ -1644,10 +1644,8 @@ module.exports.addBid = async (req, res) => {
     });
   }
 
-
-  const clientIp = requestIp.getClientIp(req); 
-  console.log('clientIp=', clientIp);
-
+  const clientIp = (req.headers['x-forwarded-for'] || '').split(',')[0] || req.connection.remoteAddress;
+  
   const schema = joi
     .object({
       bidPrice: joi
