@@ -83,6 +83,10 @@ const questionSchema = mongoose.Schema({
     type: Number,
     default: 0
   },
+  priority: {
+    type: Number,
+    default: null
+  },
   answerCredit: {
     type: Number,
     default: null

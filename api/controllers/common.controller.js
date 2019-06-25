@@ -757,7 +757,8 @@ module.exports.addQuestion = async (req, res) => {
   if(defaultCredits && defaultCredits.defaultQuestionCredit){
     result.value.credit = defaultCredits.defaultQuestionCredit;
   }
-
+  //This is for default prority=3.
+  result.value.priority = 3;
   if(req.file){
     const imagePath = `${config.MEDIA_FOLDER}/questionPictures/${req.file.filename}`;
     const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
@@ -1645,7 +1646,7 @@ module.exports.addBid = async (req, res) => {
   }
 
   const clientIp = (req.headers['x-forwarded-for'] || '').split(',')[0] || req.connection.remoteAddress;
-  
+
   const schema = joi
     .object({
       bidPrice: joi

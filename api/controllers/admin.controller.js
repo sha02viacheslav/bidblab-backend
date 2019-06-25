@@ -511,6 +511,9 @@ module.exports.addQuestion = async (req, res) => {
         .trim()
         .max(500)
         .required(),
+      priority: joi
+        .number()
+        .required(),
       answerCredit: joi
         .number()
         .required(),
@@ -540,7 +543,7 @@ module.exports.addQuestion = async (req, res) => {
 			data: null,
 		});
   }
-  
+  //Delete answerCredit if answerCredit is set as same with default public answer credit.
   if(defaultCredits.defaultPublicAnswerCredit == result.value.answerCredit){
     result.value.answerCredit = null;
   }
@@ -738,6 +741,9 @@ module.exports.updateQuestion = async (req, res) => {
         .string()
         .trim()
         .max(500),
+      priority: joi
+        .number()
+        .required(),
       answerCredit: joi
         .number()
         .required(),
@@ -766,7 +772,7 @@ module.exports.updateQuestion = async (req, res) => {
 			data: null,
 		});
   }
-  
+  //Delete answerCredit if answerCredit is set as same with default public answer credit.
   if(defaultCredits.defaultPublicAnswerCredit == result.value.answerCredit){
     result.value.answerCredit = null;
   }
