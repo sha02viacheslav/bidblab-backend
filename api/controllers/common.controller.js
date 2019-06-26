@@ -1465,7 +1465,10 @@ module.exports.getAuctions = async (req, res) => {
     .exec();
 
   for( var key in auctions){
-    auctions[key].bids = [];
+    auctions[key] = await module.exports.checkBids(auctions[key]);
+    if(auctions[key].role != global.data().auctionRole.closed){
+      auctions[key].bids = [];
+    }
   }
   
 	res.status(200).json({
