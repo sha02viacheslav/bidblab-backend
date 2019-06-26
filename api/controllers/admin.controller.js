@@ -905,37 +905,28 @@ module.exports.updateAnswer = async (req, res) => {
   });
 };
 
-module.exports.deleteAnswer = async (req, res) => {
-  if (
-    !(
-      Validations.isObjectId(req.params.questionId) &&
-      Validations.isObjectId(req.params.answerId)
-    )
-  ) {
-    return res.status(422).json({
-      err: null,
-      msg: 'questionId and answerId parameters must be valid ObjectIds',
-      data: null,
-    });
+module.exports.deleteAnswers = async (req, res) => {
+  
+  let totalDeletedAnswers = 0;
+  const elementIds = req.body;
+
+  for(let index in elementIds){
+    let question = await Question.findById(elementIds[index].questionId).exec();
+    if (!question) {
+      continue;
+    }
+    let answer = question.answers.id(elementIds[index].answerId);
+    if (!answer) {
+      continue;
+    }
+    answer.remove();
+    await question.save();
+    totalDeletedAnswers++;
   }
-  const question = await Question.findById(req.params.questionId).exec();
-  if (!question) {
-    return res
-      .status(404)
-      .json({ err: null, msg: 'Question not found.', data: null });
-  }
-  const answer = question.answers.id(req.params.answerId);
-  if (!answer) {
-    return res
-      .status(404)
-      .json({ err: null, msg: 'Answer not found.', data: null });
-  }
-  answer.remove();
-  await question.save();
   res.status(200).json({
     err: null,
-    msg: 'Answer was deleted successfully.',
-    data: answer,
+    msg: 'Answers were deleted successfully.',
+    data: totalDeletedAnswers,
   });
 };
 

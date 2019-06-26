@@ -195,11 +195,11 @@ router.patch(
   isAdmin,
   errorHandler(adminCtrl.updateAnswer),
 );
-router.delete(
-  '/admin/deleteAnswer/:questionId/:answerId',
+router.post(
+  '/admin/deleteAnswers',
   isAuthenticated,
   isAdmin,
-  errorHandler(adminCtrl.deleteAnswer),
+  errorHandler(adminCtrl.deleteAnswers),
 );
 router.post(
   '/admin/changeAnswersRole/:roleType',
