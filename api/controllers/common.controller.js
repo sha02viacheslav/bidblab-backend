@@ -1468,14 +1468,23 @@ module.exports.getAuctionsAfterLogin = async (req, res) => {
   let { offset = 0, limit = 10, search, auctionType = 0 } = req.query;
   search = search.replace(/([<>*()?])/g, "\\$1");
   const query = {
-    role: auctionType
+    $or: [
+      {role: global.data().auctionRole.process},
+      {role: global.data().auctionRole.closed}
+    ]
   };
   const start = Number(limit) * Number(offset);
   const size = Number(limit);
-
+  //auctionType is process or closed. Sort by auctionType.
+  if(auctionType == global.data().auctionRole.process) {
+    var sortVariable = {role: 1}
+  } else {
+    var sortVariable = {role: -1}
+  }
   const totalAuctionsCount = await Auction.count(query).exec();
   const auctions = await  Auction.find(query)
     .lean()
+    .sort(sortVariable)
     .skip(start)
     .limit(size)
     .populate({
