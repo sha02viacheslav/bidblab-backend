@@ -974,7 +974,10 @@ module.exports.changeDefaultCredits  = async (req, res) => {
       defaultReferralCredit: joi
 				.number()
 				.required(),
-        defaultSignupCredit: joi
+      defaultSignupCredit: joi
+				.number()
+				.required(),
+      defaultFirstAnswerCredit: joi
 				.number()
 				.required(),
 		})

@@ -29,6 +29,10 @@ const creditSchema = mongoose.Schema({
         type: Number,
         required: true,
     },
+    defaultFirstAnswerCredit: {
+        type: Number,
+        required: true,
+    },
   });
   
 mongoose.model('Credit', creditSchema);
