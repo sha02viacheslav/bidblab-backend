@@ -843,9 +843,9 @@ module.exports.addAnswer = async (req, res) => {
 	}
 	if (question.asker && question.asker == req.decodedToken.user._id) {
 		return res.status(200).json({
-		err: null,
-		msg: 'You can not answer a question you asked.',
-		data: null,
+      err: null,
+      msg: 'You can not answer a question you asked.',
+      data: null,
 		});
 	}
 	const alreadyAnswered = question.answers.some(
@@ -853,9 +853,9 @@ module.exports.addAnswer = async (req, res) => {
 	);
 	if (alreadyAnswered && !req.decodedToken.admin) {
 		return res.status(200).json({
-		err: null,
-		msg: 'You have already answered this question.',
-		data: null,
+      err: null,
+      msg: 'You have already answered this question.',
+      data: null,
 		});
 	}
 	result.value.answerer = req.decodedToken.admin
@@ -881,7 +881,11 @@ module.exports.addAnswer = async (req, res) => {
 		} else {
 			result.value.credit = 4;
 		}
-	}
+  }
+  //first answer
+  if(!question.answers.length) {
+    result.value.credit *= (defaultCredits.defaultFirstAnswerCredit? defaultCredits.defaultFirstAnswerCredit: 2);
+  }
   
 	let answer = question.answers.create(result.value);
 	question.answers.push(answer);
