@@ -202,7 +202,7 @@ module.exports.getQuestionByQuestionId = async (req, res) => {
     })
     .exec();
   
-  //await question.save();
+  question.answers = question.answers.filter(element => element.role == 'activate');
   removeProfileOfPrivate(question);
 
   if (!question) {
