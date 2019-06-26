@@ -371,7 +371,7 @@ router.get(
   isAuthenticated,
   errorHandler(commonCtrl.getQuestionsCanAnswer));
 router.get(
-  '/common/getQuestionByQuestionId/:questionId',
+  '/common/getQuestionByQuestionId/:questionId/:userId',
   errorHandler(commonCtrl.getQuestionByQuestionId),
 );
 router.get(

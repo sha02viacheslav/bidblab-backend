@@ -20,9 +20,9 @@ const Invite = mongoose.model('Invite');
 
 const ObjectId = mongoose.Types.ObjectId;
 
-const removeProfileOfPrivate = (question) => {
+const removeProfileOfPrivate = (question, userId) => {
   question.answers.forEach(element => {
-    if(element.answertype == 'private'){
+    if(element.answertype == 'private' && (!userId || userId != element.answerer._id)){
       element.answerer = null;
     }
   });
@@ -203,7 +203,9 @@ module.exports.getQuestionByQuestionId = async (req, res) => {
     .exec();
   
   question.answers = question.answers.filter(element => element.role == 'activate');
-  removeProfileOfPrivate(question);
+  // if (Validations.isObjectId(req.params.userId) && req.params.userId) {
+  // }
+  removeProfileOfPrivate(question, req.params.userId);
 
   if (!question) {
     return res
