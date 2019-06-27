@@ -207,6 +207,31 @@ router.post(
   isAdmin,
   errorHandler(adminCtrl.changeAnswersRole),
 );
+// ------------Tags------------
+router.get(
+	'/admin/getTags',
+	isAuthenticated,
+	isAdmin,
+	errorHandler(adminCtrl.getTags)
+);
+router.post(
+  '/admin/addTag',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.addTag),
+);
+router.post(
+  '/admin/updateTag/:tagId',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.updateTag),
+);
+router.post(
+  '/admin/deleteTags',
+  isAuthenticated,
+  isAdmin,
+  errorHandler(adminCtrl.deleteTags),
+);
 // ------------Flag------------
 router.get(
   '/admin/getFlags',

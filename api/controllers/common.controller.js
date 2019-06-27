@@ -1392,7 +1392,7 @@ module.exports.getStandardInterests  = async (req, res) => {
         $group:
           {
             _id: null,
-            interests: { $addToSet: "$interestName" }
+            interests: { $addToSet: "$tagName" }
           }
       }
     ]

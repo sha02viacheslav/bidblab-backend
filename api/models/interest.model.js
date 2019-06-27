@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const interestSchema = mongoose.Schema({
-    interestName: {
+    tagName: {
         type: String,
         required: true,
         trim: true,

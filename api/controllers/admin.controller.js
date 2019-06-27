@@ -701,6 +701,7 @@ module.exports.deleteQuestions = async (req, res) => {
     },
   });
 };
+
 module.exports.changeQuestionsRole = async (req, res) => {
 
   let suspendedQuestions = [];
@@ -1108,7 +1109,6 @@ module.exports.getAnswers = async (req, res) => {
         '-email -password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
     }
   );
-  console.log(answers);
 	answers.forEach(( element, index ) => {
 	  element.index = start + index;
 	});
@@ -1122,6 +1122,189 @@ module.exports.getAnswers = async (req, res) => {
 			answers,
 		},
 	});
+};
+
+
+module.exports.getTags = async (req, res) => {
+	let { offset = 0, limit = 10, search, active, direction } = req.query; 
+  search = search.replace(/([<>*()?])/g, "\\$1");
+	const query =	{
+    $and: [
+      search? {
+        tagName: {
+        $regex: search,
+        $options: 'i',
+        },
+      }: { },
+    ],
+  }
+	
+	var sortVariable = {};
+	if(direction == 'asc'){
+	  	sortVariable[active] = 1;
+	}
+	else if(direction == 'desc'){
+		sortVariable[active] = -1;
+  }
+  else{
+    sortVariable['tagName'] = -1;
+  }
+  let totalTags = await Interest.count(query).exec();
+	let start = Number(limit) * Number(offset);
+	const size = Number(limit);
+	start = totalTags <= start? 0 : start;
+
+	let tags = await Interest.find(query)
+  .lean()
+  .sort(sortVariable)
+  .skip(start)
+  .limit(size)
+  .exec();
+
+	tags.forEach(( element, index ) => {
+	  element.index = start + index;
+	});
+  
+	res.status(200).json({
+		err: null,
+		msg: 'Answers retrieved successfully.',
+		data: {
+			totalTags,
+			tags,
+		},
+	});
+};
+
+module.exports.addTag = async (req, res) => {
+  const schema = joi
+    .object({
+      tagName: joi
+        .string()
+        .trim()
+        .max(20)
+        .required(),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    return res.status(422).json({
+      msg: result.error.details[0].message,
+      err: null,
+      data: null,
+    });
+  }
+
+  const existingTag = await Interest.findOne({
+    title: {
+      $regex: result.value.tagName,
+      $options: 'i',
+    },
+  })
+  .lean()
+  .exec();
+  if (existingTag) {
+    return res.status(403).json({
+      err: null,
+      msg: 'Tag already exists, try a different format or rephrasing.',
+      data: null,
+    });
+  }
+  
+  let newTag = await Interest.create(result.value);
+  newTag = await Interest.findById(newTag._id).lean().exec();
+  res.status(201).json({
+    err: null,
+    msg: 'Tag was added successfully.',
+    data: newTag,
+  });
+};
+
+module.exports.updateTag = async (req, res) => {
+  if (!Validations.isObjectId(req.params.tagId)) {
+    return res.status(200).json({
+      err: null,
+      msg: 'TagId parameter must be a valid ObjectId.',
+      data: null,
+    });
+  }
+  const schema = joi
+    .object({
+      tagName: joi
+        .string()
+        .trim()
+        .max(20),
+    })
+    .options({
+      stripUnknown: true,
+    });
+  const result = schema.validate(req.body);
+  if (result.error) {
+    res.status(200).json({
+      err: null,
+      msg: result.error.details[0].message,
+      data: null,
+    });
+  }
+
+  const existingTag = await Interest.findOne({
+    tagName: {
+      $regex: result.value.tagName,
+      $options: 'i',
+    },
+  })
+  .lean()
+  .exec();
+  if (existingTag) {
+    return res.status(200).json({
+      err: null,
+      msg: 'Tag already exists, try a different format or rephrasing.',
+      data: null,
+    });
+  }
+
+  const updatedTag = await Interest.findByIdAndUpdate(
+    req.params.tagId,
+    {
+      $set: result.value,
+    },
+  )
+  .lean()
+  .exec();
+  if (!updatedTag) {
+    res.status(200).json({
+      err: null,
+      msg: 'Tag was not found.',
+      data: null,
+    });
+  }
+
+  res.status(200).json({
+    err: null,
+    msg: 'Tag was updated successfully.',
+    data: updatedTag,
+  });
+};
+
+module.exports.deleteTags = async (req, res) => {
+
+  let totalDeleteTags = 0;
+
+  for(let index in req.body){
+    let deletedTag = await Interest.findByIdAndRemove(req.body[index])
+    .exec();
+    if (deletedTag) {
+      totalDeleteTags++;
+    }
+  }
+  res.status(200).json({
+    err: null,
+    msg: 'Tags were deleted successfully.',
+    data: {
+      totalDeleteTags
+    },
+  });
 };
 
 module.exports.getFlags = async (req, res) => {
