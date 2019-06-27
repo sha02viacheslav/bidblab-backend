@@ -781,26 +781,39 @@ module.exports.addQuestion = async (req, res) => {
     if(defaultCredits && defaultCredits.defaultOptionalImageCredit){
       result.value.optionalImageCredit = defaultCredits.defaultOptionalImageCredit;
     }
-  }
-  else{
+  } else {
     result.value.questionPicture = '';
     result.value.optionalImageCredit =0;
   }
-  
+  //Add tag if not exist.
+  const existingTag = await Interest.findOne({
+    tagName: {
+      $regex: new RegExp("^" + result.value.tag + "$", "i"),
+      $options: 'i',
+    },
+  })
+  .lean()
+  .exec();
+  if (existingTag) {
+    result.value.tag = existingTag.tagName;
+  } else {
+    let newTag = await Interest.create({tagName: result.value.tag});
+  }
+
   let newQuestion = await Question.create(result.value);
   newQuestion = await Question.findById(newQuestion._id)
-    .lean()
-    .populate({
-      path: 'asker',
-      select:
-        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-    })
-    .populate({
-      path: 'answers.answerer',
-      select:
-        '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-    })
-    .exec();
+  .lean()
+  .populate({
+    path: 'asker',
+    select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .populate({
+    path: 'answers.answerer',
+    select:
+      '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+  })
+  .exec();
   res.status(201).json({
     err: null,
     msg: 'Question was added successfully.',
@@ -886,7 +899,7 @@ module.exports.addAnswer = async (req, res) => {
   if(!question.answers.length) {
     result.value.credit *= (defaultCredits.defaultFirstAnswerCredit? defaultCredits.defaultFirstAnswerCredit: 2);
   }
-  
+
 	let answer = question.answers.create(result.value);
 	question.answers.push(answer);
 	await question.save();
