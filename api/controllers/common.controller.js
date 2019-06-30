@@ -53,7 +53,7 @@ module.exports.getQuestions = async (req, res) => {
       { $match: query },
       {
         $addFields: {
-          orderScore: { $add: [{ $ifNull: [ "$priority", 3 ] }, "$credit"] } ,
+          orderScore: { $add: [{ $ifNull: [ "$priority", 3 ] }, { $ifNull: [ "$answerCredit", "$credit" ] }] } ,
         }
       },
       {
