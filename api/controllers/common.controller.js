@@ -151,31 +151,50 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
     ],
   };
   const resolvedPromises = await Promise.all([
-    Question.count(query_search).exec(),
-    Question.find(query_search).find(query_userId)
-      .lean()
-      .skip(+offset)
-      .limit(+limit)
-      .populate({
-        path: 'asker',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-      .populate({
-        path: 'answers.answerer',
-        select:
-          '-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-      })
-	  .exec(),
+    Question.count(query_search).exec(),    
+    Question.aggregate([
+      { $match: query_search },
+      { $match: query_userId },
+      {
+        $addFields: {
+          orderScore: { $add: [{ $ifNull: [ "$priority", 3 ] }, { $ifNull: [ "$answerCredit", "$credit" ] }] } ,
+        }
+      },
+      {
+        $sort: {
+          orderScore: -1,
+          createdAt: -1
+        }
+      },
+      { $skip: +offset },
+      { $limit: +limit },
+    ])
+    .exec() 
   ]);
   const count = resolvedPromises[0];
   const questions = resolvedPromises[1];
+  await User.populate(
+    questions, 
+    {
+      path: 'answers.answerer',
+      select:
+        '-email -password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    }
+  );
+  await User.populate(
+    questions, 
+    {
+      path: 'asker',
+      select:
+        '-email -password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+    }
+  );
   res.status(200).json({
     err: null,
     msg: 'Questions retrieved successfully.',
     data: {
       count,
-	  questions,
+	    questions,
     },
   });
 };
