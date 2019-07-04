@@ -746,11 +746,11 @@ module.exports.addQuestion = async (req, res) => {
         .trim()
         .max(500)
         .required(),
-      tag: joi
-        .string()
-        .trim()
-        .max(15)
-        .required(),
+      tags: joi
+				.array()
+				.items(
+					joi.string()
+				),
     })
     .options({
       stripUnknown: true,
@@ -805,18 +805,27 @@ module.exports.addQuestion = async (req, res) => {
     result.value.optionalImageCredit =0;
   }
   //Add tag if not exist.
-  const existingTag = await Interest.findOne({
-    tagName: {
-      $regex: new RegExp("^" + result.value.tag + "$", "i"),
-      $options: 'i',
-    },
-  })
-  .lean()
-  .exec();
-  if (existingTag) {
-    result.value.tag = existingTag.tagName;
-  } else {
-    let newTag = await Interest.create({tagName: result.value.tag});
+  if(!result.value.tags.length || result.value.tags.length > 3) {
+    res.status(201).json({
+      err: null,
+      msg: 'Question tags must be less than or equal to 3.',
+      data: null,
+    });
+  }
+  for(var index in result.value.tags) {
+    let existingTag = await Interest.findOne({
+      tagName: {
+        $regex: new RegExp("^" + result.value.tags[index] + "$", "i"),
+        $options: 'i',
+      },
+    })
+    .lean()
+    .exec();
+    if (existingTag) {
+      result.value.tags[index] = existingTag.tagName;
+    } else {
+      let newTag = await Interest.create({tagName: result.value.tags[index]});
+    }
   }
 
   let newQuestion = await Question.create(result.value);

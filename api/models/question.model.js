@@ -78,10 +78,9 @@ const questionSchema = mongoose.Schema({
   },
   answers: [answerSchema],
   follows: [followSchema],
-  tag: {
-    type: String,
+  tags: {
+    type: [String],
     required: true,
-    trim: true,
   },
   credit: {
     type: Number,
