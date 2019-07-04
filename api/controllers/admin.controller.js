@@ -520,11 +520,11 @@ module.exports.addQuestion = async (req, res) => {
         .number()
         .min(0)
         .required(),
-      tag: joi
-        .string()
-        .trim()
-        .max(15)
-        .required(),
+      tags: joi
+				.array()
+				.items(
+					joi.string()
+				),
     })
     .options({
       stripUnknown: true,
@@ -577,6 +577,30 @@ module.exports.addQuestion = async (req, res) => {
   }
   else{
     result.value.questionPicture = '';
+  }
+
+  //Add tag if not exist.
+  if(!result.value.tags.length || result.value.tags.length > 3) {
+    res.status(201).json({
+      err: null,
+      msg: 'Question tags must be less than or equal to 3.',
+      data: null,
+    });
+  }
+  for(var index in result.value.tags) {
+    let existingTag = await Interest.findOne({
+      tagName: {
+        $regex: new RegExp("^" + result.value.tags[index] + "$", "i"),
+        $options: 'i',
+      },
+    })
+    .lean()
+    .exec();
+    if (existingTag) {
+      result.value.tags[index] = existingTag.tagName;
+    } else {
+      let newTag = await Interest.create({tagName: result.value.tags[index]});
+    }
   }
   
   let newQuestion = await Question.create(result.value);
@@ -754,10 +778,11 @@ module.exports.updateQuestion = async (req, res) => {
         .number()
         .min(0)
         .required(),
-      tag: joi
-        .string()
-        .trim()
-        .max(15),
+      tags: joi
+				.array()
+				.items(
+					joi.string()
+				),
     })
     .options({
       stripUnknown: true,
@@ -794,6 +819,30 @@ module.exports.updateQuestion = async (req, res) => {
     result.value.questionPicture = '';
   }
   result.value.updatedAt = moment().toDate();
+  //Add tag if not exist.
+  if(!result.value.tags.length || result.value.tags.length > 3) {
+    res.status(201).json({
+      err: null,
+      msg: 'Question tags must be less than or equal to 3.',
+      data: null,
+    });
+  }
+  for(var index in result.value.tags) {
+    let existingTag = await Interest.findOne({
+      tagName: {
+        $regex: new RegExp("^" + result.value.tags[index] + "$", "i"),
+        $options: 'i',
+      },
+    })
+    .lean()
+    .exec();
+    if (existingTag) {
+      result.value.tags[index] = existingTag.tagName;
+    } else {
+      let newTag = await Interest.create({tagName: result.value.tags[index]});
+    }
+  }
+
   const updatedQuestion = await Question.findByIdAndUpdate(
     req.body.questionId,
     {
