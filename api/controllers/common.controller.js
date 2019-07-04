@@ -58,8 +58,9 @@ module.exports.getQuestions = async (req, res) => {
       },
       {
         $sort: {
+          updatedAt: -1,
+          createdAt: -1,
           orderScore: -1,
-          createdAt: -1
         }
       },
       { $skip: start },
@@ -929,7 +930,8 @@ module.exports.addAnswer = async (req, res) => {
   }
 
 	let answer = question.answers.create(result.value);
-	question.answers.push(answer);
+  question.answers.push(answer);
+  question.updatedAt = moment().toDate();
 	await question.save();
 	if (!req.decodedToken.admin) {
 		answer = answer.toObject();
@@ -1399,7 +1401,6 @@ module.exports.addReport = async (req, res) => {
     else{
       report.reportType = req.params.reportType;
       report.reportNote = req.params.reportNote;
-      report.updatedAt = moment().toDate();
       await report.save();
     }
   }
@@ -1407,7 +1408,6 @@ module.exports.addReport = async (req, res) => {
     result.value.questionId = req.params.questionId;
     result.value.answerId = req.params.answerId;
     result.value.reporter = req.decodedToken.user._id;
-    result.value.updatedAt = moment().toDate();
     report = await Report.create(result.value);
   }
   newReport = await Report.findById(report._id)

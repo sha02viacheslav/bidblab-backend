@@ -818,7 +818,7 @@ module.exports.updateQuestion = async (req, res) => {
   else{
     result.value.questionPicture = '';
   }
-  result.value.updatedAt = moment().toDate();
+  
   //Add tag if not exist.
   if(!result.value.tags.length || result.value.tags.length > 3) {
     res.status(201).json({
