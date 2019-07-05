@@ -139,14 +139,14 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
         "answers": {
           "$not": {
             "$elemMatch": {
-              "answerer": req.decodedToken.user._id
+              "answerer": ObjectId(req.decodedToken.user._id)
             }
           }
         }
       },
       {
         "asker": {
-          "$ne": req.decodedToken.user._id
+          "$ne": ObjectId(req.decodedToken.user._id)
         }
       },
     ],
@@ -239,7 +239,7 @@ module.exports.getQuestionByQuestionId = async (req, res) => {
           "_id": ObjectId(req.params.questionId) 
         }
       },
-       { $unwind : "$answers" },
+      { $unwind : "$answers" },
       { 
         $project : { 
           answerId:"$answers._id",
