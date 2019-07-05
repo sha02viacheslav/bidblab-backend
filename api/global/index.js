@@ -20,37 +20,37 @@ const Invite = mongoose.model('Invite');
 
 const ObjectId = mongoose.Types.ObjectId;
 module.exports.data = () => {
-  return data = {
-    mailRole: {
-      inbox: 1,
-      sent: 2,
-      archived: 4,
-      trash: 8,
-      adminTrash: 16,
-      all: 31
-    },
-    auctionRole: {
-      pending: 1,
-      process: 2,
-      closed: 4,
-      deleted: 8,
-      all: 15
-    }
-  }
+	return data = {
+		mailRole: {
+			inbox: 1,
+			sent: 2,
+			archived: 4,
+			trash: 8,
+			adminTrash: 16,
+			all: 31
+		},
+		auctionRole: {
+			pending: 1,
+			process: 2,
+			closed: 4,
+			deleted: 8,
+			all: 15
+		}
+	}
 };
 
 module.exports.changeAuctionRole = async () => {
-  const auctions = await Auction.find().exec();
-  for(var index in auctions) {
-    if(auctions[index].starts > new Date()){
-      auctions[index].role = module.exports.data().auctionRole.pending;
-    }
-    else if(auctions[index].closes > new Date()){
-      auctions[index].role = module.exports.data().auctionRole.process;
-    }
-    else{
-      auctions[index].role = module.exports.data().auctionRole.closed;
-    }
-    await auctions[index].save();
-  }
+	const auctions = await Auction.find().exec();
+	for (var index in auctions) {
+		if (auctions[index].starts > new Date()) {
+			auctions[index].role = module.exports.data().auctionRole.pending;
+		}
+		else if (auctions[index].closes > new Date()) {
+			auctions[index].role = module.exports.data().auctionRole.process;
+		}
+		else {
+			auctions[index].role = module.exports.data().auctionRole.closed;
+		}
+		await auctions[index].save();
+	}
 };
