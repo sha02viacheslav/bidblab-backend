@@ -1670,7 +1670,7 @@ module.exports.checkBids = async (auction) => {
 			}
 		}
 	}
-	auction.maxUniqueBid = maxUniqueBid.bidder;
+	auction.maxUniqueBid = maxUniqueBid.bidder? maxUniqueBid.bidder: null;
 	if (maxUniqueBid) {
 		let temp = auction.bids.find(item => item._id == maxUniqueBid._id);
 		temp.bidStatus |= 1 << 1;
