@@ -771,9 +771,7 @@ module.exports.addQuestion = async (req, res) => {
 			$regex: result.value.title,
 			$options: 'i',
 		},
-	})
-		.lean()
-		.exec();
+	}).lean().exec();	
 	if (existingQuestion) {
 		return res.status(403).json({
 			err: null,
@@ -786,8 +784,7 @@ module.exports.addQuestion = async (req, res) => {
 		: req.decodedToken.user._id;
 
 	result.value.credit = 5;
-	const defaultCredits = await Credit.findOne({ dataType: "credit" })
-		.exec();
+	const defaultCredits = await Credit.findOne({ dataType: "credit" }).exec();
 	if (defaultCredits && defaultCredits.defaultQuestionCredit) {
 		result.value.credit = defaultCredits.defaultQuestionCredit;
 	}
@@ -821,9 +818,7 @@ module.exports.addQuestion = async (req, res) => {
 				$regex: new RegExp("^" + result.value.tags[index] + "$", "i"),
 				$options: 'i',
 			},
-		})
-			.lean()
-			.exec();
+		}).lean().exec();
 		if (existingTag) {
 			result.value.tags[index] = existingTag.tagName;
 		} else {
@@ -1429,22 +1424,20 @@ module.exports.addReport = async (req, res) => {
 
 
 module.exports.getStandardInterests = async (req, res) => {
-	const standardInterests = await Interest.aggregate(
-		[
-			{
-				$group:
-				{
-					_id: null,
-					interests: { $addToSet: "$tagName" }
-				}
+	const standardInterests = await Interest.aggregate([
+		{
+			$group: {
+				_id: null,
+				interests: { $addToSet: "$tagName" }
 			}
-		]
-	)
-		.exec();
-	if (!standardInterests) {
-		return res
-			.status(404)
-			.json({ err: null, msg: 'StandardInterests was not found.', data: null });
+		}
+	]).exec();
+	if (!standardInterests.length) {
+		res.status(200).json({
+			err: null,
+			msg: 'StandardInterests was not found.',
+			data: null
+		});
 	}
 
 	res.status(200).json({

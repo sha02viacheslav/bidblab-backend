@@ -563,9 +563,7 @@ module.exports.updateProfile = async (req, res) => {
 				email: result.value.email,
 			},
 			],
-		})
-			.lean()
-			.exec();
+		}).lean().exec();
 		if (user) {
 			return res.status(422).json({
 				err: null,
@@ -580,7 +578,7 @@ module.exports.updateProfile = async (req, res) => {
 		result.value.profilePicture = { path: imagePath, url: url, };
 	}
 	else {
-		result.value.profilePicture = ''
+		result.value.profilePicture = null;
 	}
 	result.value.phone = req.body.phone;
 	result.value.gender = req.body.gender;
@@ -598,8 +596,7 @@ module.exports.updateProfile = async (req, res) => {
 		req.decodedToken.user._id, {
 			$set: result.value,
 		},
-	)
-		.exec();
+	).exec();
 	if (!updatedUser) {
 		return res.status(404).json({
 			err: null,
@@ -607,12 +604,12 @@ module.exports.updateProfile = async (req, res) => {
 			data: null,
 		});
 	}
-	if (updatedUser.profilePicture) {
+	if (updatedUser.profilePicture && updatedUser.profilePicture.path) {
 		await fs.remove(path.resolve('./', updatedUser.profilePicture.path));
 	}
 	updatedUser = await User.findByIdAndUpdate(req.decodedToken.user._id)
-		.select('-createdAt -updatedAt')
-		.exec();
+	.select('-createdAt -updatedAt')
+	.exec();
 	if (!updatedUser) {
 		return res.status(404).json({
 			err: null,
