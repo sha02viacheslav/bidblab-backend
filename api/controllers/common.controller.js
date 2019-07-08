@@ -1489,11 +1489,6 @@ module.exports.getAuctions = async (req, res) => {
 		.skip(start)
 		.limit(size)
 		.populate({
-			path: 'auctioner',
-			select:
-				'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-		})
-		.populate({
 			path: 'bids.bidder',
 			select:
 				'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
@@ -1541,11 +1536,6 @@ module.exports.getAuctionsAfterLogin = async (req, res) => {
 		.sort(sortVariable)
 		.skip(start)
 		.limit(size)
-		.populate({
-			path: 'auctioner',
-			select:
-				'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-		})
 		.populate({
 			path: 'bids.bidder',
 			select:
@@ -1607,11 +1597,6 @@ module.exports.getBiddingAuctions = async (req, res) => {
 		.skip(start)
 		.limit(size)
 		.populate({
-			path: 'auctioner',
-			select:
-				'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-		})
-		.populate({
 			path: 'bids.bidder',
 			select:
 				'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
@@ -1648,11 +1633,6 @@ module.exports.getAuctionById = async (req, res) => {
 
 	let auction = await Auction.findById(req.params.auctionId)
 		.lean()
-		.populate({
-			path: 'auctioner',
-			select:
-				'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-		})
 		.populate({
 			path: 'bids.bidder',
 			select:

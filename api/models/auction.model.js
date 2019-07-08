@@ -29,15 +29,6 @@ const auctionSchema = mongoose.Schema({
         required: true,
         trim: true,
     },
-    // productName: {
-    //     type: String,
-    // },
-    // productDescription: {
-    //     type: String,
-    // },
-    // manufactureDescription: {
-    //     type: String,
-    // },
     bidblabPrice: {
         type: Number,
         default: 0
