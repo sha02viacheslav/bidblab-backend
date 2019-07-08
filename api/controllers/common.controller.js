@@ -1200,14 +1200,14 @@ module.exports.deleteFollow = async (req, res) => {
 
 module.exports.addThumb = async (req, res) => {
 	if (!Validations.isObjectId(req.params.questionId)) {
-		return res.status(422).json({
+		return res.status(200).json({
 			err: null,
 			msg: 'questionId parameter must be a valid ObjectId.',
 			data: null,
 		});
 	}
 	if (!Validations.isObjectId(req.params.answerId)) {
-		return res.status(422).json({
+		return res.status(200).json({
 			err: null,
 			msg: 'answerId parameter must be a valid ObjectId.',
 			data: null,
@@ -1216,12 +1216,14 @@ module.exports.addThumb = async (req, res) => {
 
 	const question = await Question.findById(req.params.questionId).exec();
 	if (!question) {
-		return res
-			.status(404)
-			.json({ err: null, msg: 'Question not found.', data: null });
+		return res.status(200).json({
+			err: null,
+			msg: 'Question not found.',
+			data: null,
+		});
 	}
-	if (req.decodedToken.user._id && req.decodedToken.user._id == question.asker._id) {
-		return res.status(403).json({
+	if (req.decodedToken.user._id && req.decodedToken.user._id == question.asker) {
+		return res.status(200).json({
 			err: null,
 			msg: 'You can not thumb your question.',
 			data: null,
@@ -1229,12 +1231,14 @@ module.exports.addThumb = async (req, res) => {
 	}
 	const answer = question.answers.id(req.params.answerId);
 	if (!answer) {
-		return res
-			.status(404)
-			.json({ err: null, msg: 'Answer not found.', data: null });
+		return res.status(200).json({
+			err: null,
+			msg: 'Answer not found.',
+			data: null,
+		});
 	}
-	if (req.decodedToken.user._id && req.decodedToken.user._id == answer.answerer._id) {
-		return res.status(403).json({
+	if (req.decodedToken.user._id && req.decodedToken.user._id == answer.answerer) {
+		return res.status(200).json({
 			err: null,
 			msg: 'You can not thumb your answer.',
 			data: null,
@@ -1328,9 +1332,11 @@ module.exports.addThumb = async (req, res) => {
 
 
 	if (!newQuestion) {
-		return res
-			.status(404)
-			.json({ err: null, msg: 'Thumb was not add.', data: null });
+		res.status(200).json({
+			err: null,
+			msg: 'Thumb was not add.',
+			data: null,
+		});
 	}
 	res.status(200).json({
 		err: null,
