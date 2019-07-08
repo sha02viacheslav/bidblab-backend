@@ -1690,7 +1690,7 @@ module.exports.removeOtherBids = async (userId, auction) => {
 
 	var tempBids = [];
 	auction.bids.forEach(function (item, index) {
-		if (userId == item.bidder._id) {
+		if (item.bidder && userId == item.bidder._id) {
 			tempBids.push(item);
 		}
 	})
