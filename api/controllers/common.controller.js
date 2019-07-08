@@ -923,7 +923,7 @@ module.exports.addAnswer = async (req, res) => {
 	}
 	//first answer
 	if (!question.answers.length) {
-		result.value.credit *= (defaultCredits.defaultFirstAnswerCredit ? defaultCredits.defaultFirstAnswerCredit : 2);
+		result.value.credit *= ((defaultCredits && defaultCredits.defaultFirstAnswerCredit) ? defaultCredits.defaultFirstAnswerCredit : 2);
 	}
 
 	let answer = question.answers.create(result.value);
