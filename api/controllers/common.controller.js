@@ -321,28 +321,34 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
 		});
 	}
 
-	let interestFilterFlag = true;
+	let tagFilterFlag = false;
 	if (req.query.interestFilter) {
-		interestFilterFlag = false;
+		tagFilterFlag = true;
 	}
 	let interestArray = req.query.interestFilter.replace(/^\[|\]$/g, "").split(",");
-	const resolvedPromises = await Promise.all([
-		Question.count({
-			"answers": {
-				"$elemMatch": {
-					"answerer": req.query.userId,
-					"answertype": "public",
+
+	const query = {
+		$and: [
+			{
+				"answers": {
+					"$elemMatch": {
+						"answerer": ObjectId(req.query.userId),
+						"answertype": "public",
+					}
 				}
 			},
-			$or: [
-				{
-					"tag": { "$in": interestArray }
-				},
-				{
-					"tag": { "$exists": interestFilterFlag }
+			tagFilterFlag ? {
+				"tags": {
+					"$elemMatch": {
+						"$in": interestArray 
+					}
 				}
-			]
-		}).exec(),
+			} : {},
+		],
+	}
+
+	const resolvedPromises = await Promise.all([
+		Question.count(query).exec(),
 		Question.aggregate(
 			[
 				{
@@ -355,9 +361,10 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
 						}
 					}
 				},
+				{ $unwind: "$tags" },
 				{
 					$group: {
-						_id: "$tag",
+						_id: "$tags",
 					}
 				},
 				{
@@ -367,28 +374,10 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
 					}
 				}
 			]
-		)
-			.exec(),
+		).exec(),
 		Question.aggregate(
 			[
-				{
-					$match: {
-						"answers": {
-							"$elemMatch": {
-								"answerer": ObjectId(req.query.userId),
-								"answertype": "public",
-							}
-						},
-						$or: [
-							{
-								"tag": { "$in": interestArray }
-							},
-							{
-								"tag": { "$exists": interestFilterFlag }
-							}
-						]
-					}
-				},
+				{ $match: query },
 				{ $unwind: "$answers" },
 				{
 					$match: {
@@ -401,7 +390,7 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
 						credit: "$answers.credit",
 						"_id": 0,
 						"title": 1,
-						"tag": 1,
+						"tags": 1,
 					}
 				},
 			]
@@ -432,32 +421,37 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
 		});
 	}
 
-	let interestFilterFlag = true;
+	let tagFilterFlag = false;
 	if (req.query.interestFilter) {
-		interestFilterFlag = false;
+		tagFilterFlag = true;
 	}
 	let interestArray = req.query.interestFilter.replace(/^\[|\]$/g, "").split(",");
-	let resolvedPromises = await Promise.all([
-		Question.count({
-			asker: req.query.userId,
-			$or: [
-				{
-					"tag": { "$in": interestArray }
-				},
-				{
-					"tag": { "$exists": interestFilterFlag }
+
+	const query = {
+		$and: [
+			{ asker: ObjectId(req.query.userId) },
+			tagFilterFlag ? {
+				"tags": {
+					"$elemMatch": {
+						"$in": interestArray 
+					}
 				}
-			]
-		}).exec(),
+			} : {},
+		],
+	}
+	
+	let resolvedPromises = await Promise.all([
+		Question.count(query).exec(),
 		Question.aggregate([
 			{
 				$match: {
 					"asker": ObjectId(req.query.userId),
 				},
 			},
+			{ $unwind: "$tags" },
 			{
 				$group: {
-					_id: "$tag",
+					_id: "$tags",
 				}
 			},
 			{
@@ -468,24 +462,12 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
 			}
 		]).exec(),
 		Question.aggregate([
-			{
-				$match: {
-					"asker": ObjectId(req.query.userId),
-					$or: [
-						{
-							"tag": { "$in": interestArray }
-						},
-						{
-							"tag": { "$exists": interestFilterFlag }
-						}
-					]
-				},
-			},
+			{ $match: query },
 			{
 				$project: {
 					"_id": 0,
 					"title": 1,
-					"tag": 1,
+					"tags": 1,
 					numberOfAnswers: { $cond: { if: { $isArray: "$answers" }, then: { $size: "$answers" }, else: 0 } },
 					numberOfFollows: { $cond: { if: { $isArray: "$follows" }, then: { $size: "$follows" }, else: 0 } }
 				}
@@ -493,7 +475,7 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
 		]).exec(),
 	]);
 	const total_questions = resolvedPromises[0];
-	const questionTags = resolvedPromises[1][0].tags;
+	const questionTags = resolvedPromises[1].length? resolvedPromises[1][0].tags: [];
 	const questions = resolvedPromises[2];
 
 	res.status(200).json({

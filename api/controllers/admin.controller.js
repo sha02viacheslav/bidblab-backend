@@ -1069,13 +1069,13 @@ module.exports.getAnswers = async (req, res) => {
 						$options: 'i',
 					},
 				} : {},
-				tagFilterFlag ? {
-					"tags": {
-						"$elemMatch": {
-							"$in": interestArray 
-						}
+			tagFilterFlag ? {
+				"tags": {
+					"$elemMatch": {
+						"$in": interestArray 
 					}
-				} : {},
+				}
+			} : {},
 		],
 	}
 
