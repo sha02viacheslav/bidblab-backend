@@ -57,7 +57,7 @@ module.exports.getQuestions = async (req, res) => {
 			{ $match: query },
 			{
 				$addFields: {
-					orderScore: { $add: [{ $ifNull: ["$priority", 3] }, { $ifNull: ["$answerCredit", defaultPublicAnswerCredit] }] },
+					orderScore: { $add: [{$ifNull: ["$priority", 3]}, {$ifNull: ["$answerCredit", defaultPublicAnswerCredit]}] },
 				}
 			},
 			{
@@ -154,6 +154,11 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
 			},
 		],
 	};
+
+	const defaultCredits = await Credit.findOne({ dataType: "credit" }).exec();
+	const defaultPublicAnswerCredit = (defaultCredits && defaultCredits.defaultPublicAnswerCredit)? 
+		defaultCredits.defaultPublicAnswerCredit: 10;
+
 	const resolvedPromises = await Promise.all([
 		Question.count(query_search).exec(),
 		Question.aggregate([
@@ -161,7 +166,7 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
 			{ $match: query_userId },
 			{
 				$addFields: {
-					orderScore: { $add: [{ $ifNull: ["$priority", 3] }, { $ifNull: ["$answerCredit", "$credit"] }] },
+					orderScore: { $add: [{ $ifNull: ["$priority", 3] }, { $ifNull: ["$answerCredit", defaultPublicAnswerCredit] }] },
 				}
 			},
 			{
