@@ -1069,9 +1069,12 @@ module.exports.getAnswers = async (req, res) => {
 						$options: 'i',
 					},
 				} : {},
-			tagFilterFlag ?
-				{
-					"tag": { "$in": interestArray }
+				tagFilterFlag ? {
+					"tags": {
+						"$elemMatch": {
+							"$in": interestArray 
+						}
+					}
 				} : {},
 		],
 	}
@@ -1102,20 +1105,6 @@ module.exports.getAnswers = async (req, res) => {
 	let start = Number(limit) * Number(offset);
 	const size = Number(limit);
 	start = totalAnswers <= start ? 0 : start;
-
-	let answerTags = await Question.aggregate([
-		{ $unwind: "$answers" },
-		{
-			$group: { _id: "$tag" }
-		},
-		{
-			$group: {
-				_id: "null",
-				tags: { "$push": "$_id" }
-			}
-		}
-	]).exec();
-	answerTags = answerTags[0].tags;
 
 	const answers = await Question.aggregate(
 		[
@@ -1152,7 +1141,6 @@ module.exports.getAnswers = async (req, res) => {
 		msg: 'Answers retrieved successfully.',
 		data: {
 			totalAnswers,
-			answerTags,
 			answers,
 		},
 	});
