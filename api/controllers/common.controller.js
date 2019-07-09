@@ -47,26 +47,29 @@ module.exports.getQuestions = async (req, res) => {
 	const start = Number(limit) * Number(offset);
 	const size = Number(limit);
 
+	const defaultCredits = await Credit.findOne({ dataType: "credit" }).exec();
+	const defaultPublicAnswerCredit = (defaultCredits && defaultCredits.defaultPublicAnswerCredit)? 
+		defaultCredits.defaultPublicAnswerCredit: 10;
+
 	const resolvedPromises = await Promise.all([
 		Question.count(query).exec(),
 		Question.aggregate([
 			{ $match: query },
 			{
 				$addFields: {
-					orderScore: { $add: [{ $ifNull: ["$priority", 3] }, { $ifNull: ["$answerCredit", "$credit"] }] },
+					orderScore: { $add: [{ $ifNull: ["$priority", 3] }, { $ifNull: ["$answerCredit", defaultPublicAnswerCredit] }] },
 				}
 			},
 			{
 				$sort: {
 					updatedAt: -1,
-					createdAt: -1,
 					orderScore: -1,
+					createdAt: -1,
 				}
 			},
 			{ $skip: start },
 			{ $limit: size },
-		])
-			.exec()
+		]).exec()
 	]);
 
 	const count = resolvedPromises[0];
