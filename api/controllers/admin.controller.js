@@ -797,15 +797,8 @@ module.exports.updateQuestion = async (req, res) => {
 	}
 
 	const defaultCredits = await Credit.findOne({ dataType: "credit" }).lean().exec();
-	if (!defaultCredits) {
-		res.status(200).json({
-			err: null,
-			msg: 'DefaultCredits was not found.',
-			data: null,
-		});
-	}
 	//Delete answerCredit if answerCredit is set as same with default public answer credit.
-	if (defaultCredits.defaultPublicAnswerCredit == result.value.answerCredit) {
+	if (defaultCredits && defaultCredits.defaultPublicAnswerCredit == result.value.answerCredit) {
 		result.value.answerCredit = null;
 	}
 
