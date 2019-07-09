@@ -635,7 +635,11 @@ module.exports.getQuestions = async (req, res) => {
 					},
 				} : {},
 			tagFilterFlag ? {
-				"tag": { "$in": interestArray }
+				"tags": {
+					"$elemMatch": {
+						"$in": interestArray 
+					}
+				}
 			} : {},
 		],
 	};
