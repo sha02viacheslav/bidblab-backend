@@ -657,20 +657,7 @@ module.exports.getQuestions = async (req, res) => {
 	if (totalQuestions <= start) {
 		start = 0;
 	}
-	let questionTags = await Question.aggregate([
-		{
-			$group: {
-				_id: "$tag",
-			}
-		},
-		{
-			$group: {
-				_id: "null",
-				tags: { "$push": "$_id" }
-			}
-		}
-	]).exec();
-	questionTags = questionTags[0].tags;
+
 	const questions = await Question.find(query)
 		.lean()
 		.sort(sortVariable)
@@ -697,7 +684,6 @@ module.exports.getQuestions = async (req, res) => {
 		msg: 'Questions retrieved successfully.',
 		data: {
 			totalQuestions,
-			questionTags,
 			questions,
 		},
 	});
