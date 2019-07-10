@@ -999,15 +999,16 @@ module.exports.changeQuestionPicture = async (req, res) => {
 
 module.exports.addFollow = async (req, res) => {
 	if (!Validations.isObjectId(req.params.objectId)) {
-		return res.status(422).json({
+		return res.status(200).json({
 			err: null,
 			msg: 'Id parameter must be a valid ObjectId.',
 			data: null,
 		});
 	}
+
 	if (req.params.followType == 'user') {
 		if (req.decodedToken.user._id && req.decodedToken.user._id == req.params.objectId) {
-			return res.status(403).json({
+			return res.status(200).json({
 				err: null,
 				msg: 'You can not follow you.',
 				data: null,
@@ -1015,15 +1016,17 @@ module.exports.addFollow = async (req, res) => {
 		}
 		const user = await User.findById(req.params.objectId).exec();
 		if (!user) {
-			return res
-				.status(404)
-				.json({ err: null, msg: 'User not found.', data: null });
+			return res.status(200).json({
+				err: null,
+				msg: 'User not found.',
+				data: null,
+			});
 		}
 		const alreadyFollowed = user.follows.some(
 			follow => follow.follower == req.decodedToken.user._id,
 		);
 		if (alreadyFollowed) {
-			return res.status(403).json({
+			return res.status(200).json({
 				err: null,
 				msg: 'You have already followed this user.',
 				data: null,
@@ -1042,13 +1045,14 @@ module.exports.addFollow = async (req, res) => {
 				path: 'follows.follower',
 				select:
 					'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
-			})
-			.exec();
+			}).exec();
 
 		if (!newUser) {
-			return res
-				.status(404)
-				.json({ err: null, msg: 'Follow was not add.', data: null });
+			return res.status(200).json({
+				err: null,
+				msg: 'Follow was not add.',
+				data: null,
+			});
 		}
 		res.status(200).json({
 			err: null,
@@ -1059,12 +1063,14 @@ module.exports.addFollow = async (req, res) => {
 	else if (req.params.followType == 'question') {
 		const question = await Question.findById(req.params.objectId).exec();
 		if (!question) {
-			return res
-				.status(404)
-				.json({ err: null, msg: 'Question not found.', data: null });
+			return res.status(200).json({
+				err: null,
+				msg: 'Question not found.',
+				data: null,
+			});
 		}
-		if (req.decodedToken.user._id && req.decodedToken.user._id === question.asker._id) {
-			return res.status(403).json({
+		if (req.decodedToken.user._id && question.asker && req.decodedToken.user._id === question.asker) {
+			return res.status(200).json({
 				err: null,
 				msg: 'You can not follow your question.',
 				data: null,
@@ -1074,7 +1080,7 @@ module.exports.addFollow = async (req, res) => {
 			follow => follow.follower == req.decodedToken.user._id,
 		);
 		if (alreadyFollowed) {
-			return res.status(403).json({
+			return res.status(200).json({
 				err: null,
 				msg: 'You have already followed this question.',
 				data: null,
@@ -1107,18 +1113,19 @@ module.exports.addFollow = async (req, res) => {
 			.exec();
 
 		if (!newQuestion) {
-			return res
-				.status(404)
-				.json({ err: null, msg: 'Follow was not add.', data: null });
+			return res.status(200).json({
+				err: null,
+				msg: 'Follow was not add.',
+				data: null,
+			});
 		}
 		res.status(200).json({
 			err: null,
 			msg: 'Follow was added successfully.',
 			data: newQuestion,
 		});
-	}
-	else {
-		return res.status(422).json({
+	} else {
+		return res.status(200).json({
 			err: null,
 			msg: 'Follow type parameter must be a valid.',
 			data: null,
