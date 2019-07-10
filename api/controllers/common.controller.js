@@ -635,7 +635,8 @@ module.exports.getQuestionsFollowing = async (req, res) => {
 	};
 	const projection = {
 		"title": 1,
-		"tag": 1,
+		"tags": 1,
+		"asker": 1,
 		"questionPicture": 1,
 	};
 
@@ -643,6 +644,11 @@ module.exports.getQuestionsFollowing = async (req, res) => {
 		Question.count(query).exec(),
 		Question.find(query, projection)
 			.lean()
+			.populate({
+				path: 'asker',
+				select:
+					'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+			})
 			.exec(),
 	]);
 	const count = resolvedPromises[0];

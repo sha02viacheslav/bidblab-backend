@@ -353,9 +353,7 @@ module.exports.updateUser = async (req, res) => {
 		{
 			new: true,
 		},
-	)
-		.select('-createdAt -updatedAt')
-		.exec();
+	).select('-createdAt -updatedAt').exec();
 	if (!updatedUser) {
 		return res.status(200).json({
 			err: null,
