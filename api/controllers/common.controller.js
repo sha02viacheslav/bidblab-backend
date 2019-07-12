@@ -391,6 +391,7 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
 						"_id": 0,
 						"title": 1,
 						"tags": 1,
+						"questionPicture": 1,
 					}
 				},
 			]
@@ -468,6 +469,7 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
 					"_id": 0,
 					"title": 1,
 					"tags": 1,
+					"questionPicture": 1,
 					numberOfAnswers: { $cond: { if: { $isArray: "$answers" }, then: { $size: "$answers" }, else: 0 } },
 					numberOfFollows: { $cond: { if: { $isArray: "$follows" }, then: { $size: "$follows" }, else: 0 } }
 				}
