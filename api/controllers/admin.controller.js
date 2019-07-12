@@ -2554,7 +2554,7 @@ module.exports.getMails = async (req, res) => {
 				'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
 		})
 		.populate({
-			path: 'recievers',
+			path: 'recievers.reciever',
 			select:
 				'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
 		})
