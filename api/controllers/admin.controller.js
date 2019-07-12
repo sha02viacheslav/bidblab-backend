@@ -1023,16 +1023,18 @@ module.exports.changeDefaultCredits = async (req, res) => {
 			data: null,
 		});
 	}
-	const defaultCredits = await Credit.findByIdAndUpdate(
-		req.body._id,
+
+	const defaultCredits = await Credit.findOneAndUpdate(
+		{ dataType: 'credit' },
 		{
 			$set: result.value,
 		},
 		{
 			new: true,
+			upsert: true
 		},
-	)
-		.exec();
+	).lean().exec();
+
 	if (!defaultCredits) {
 		return res.status(200).json({
 			err: null,
