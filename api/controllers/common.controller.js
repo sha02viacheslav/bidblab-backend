@@ -92,6 +92,7 @@ module.exports.getQuestions = async (req, res) => {
 	);
 
 	questions.forEach(question => {
+		question.answers = question.answers.filter(element => element.role == 'activate');
 		question.answers.sort((a, b) => {
 			const a_thumbupcnt = a.thumbupcnt ? a.thumbupcnt : 0;
 			const b_thumbupcnt = b.thumbupcnt ? b.thumbupcnt : 0;
@@ -101,7 +102,7 @@ module.exports.getQuestions = async (req, res) => {
 			const temp2 = b_thumbupcnt - b_thumbdowncnt;
 			return temp2 - temp1;
 		}),
-			removeProfileOfPrivate(question);
+		removeProfileOfPrivate(question);
 	});
 
 	res.status(200).json({
