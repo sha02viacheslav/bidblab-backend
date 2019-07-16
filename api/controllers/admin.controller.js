@@ -1081,13 +1081,13 @@ module.exports.getAnswers = async (req, res) => {
 
 	var sortVariable = {};
 	if (direction == 'asc') {
-		sortVariable[active] = 1;
+		sortVariable['answers.' + active] = 1;
 	}
 	else if (direction == 'desc') {
-		sortVariable[active] = -1;
+		sortVariable['answers.' + active] = -1;
 	}
 	else {
-		sortVariable['createdAt'] = -1;
+		sortVariable['answers.createdAt'] = -1;
 	}
 	let totalAnswers = await Question.aggregate(
 		[
