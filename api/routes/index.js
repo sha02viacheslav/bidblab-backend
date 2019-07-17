@@ -111,11 +111,16 @@ router.patch(
 	isAuthenticated,
 	errorHandler(authCtrl.changePassword),
 );
-router.patch(
+router.post(
 	'/auth/updateProfile',
 	isAuthenticated,
-	upload_profile('profilePictures', ['image']),
 	errorHandler(authCtrl.updateProfile),
+);
+router.patch(
+	'/auth/changeProfilePicture',
+	isAuthenticated,
+	upload_profile('profilePictures', ['image']),
+	errorHandler(authCtrl.changeProfilePicture),
 );
 // ----------------------------------Admin-------------------------------------
 // ------------User------------

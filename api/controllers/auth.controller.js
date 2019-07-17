@@ -556,12 +556,13 @@ module.exports.updateProfile = async (req, res) => {
 			_id: {
 				$ne: req.decodedToken.user._id,
 			},
-			$or: [{
-				username: result.value.username,
-			},
-			{
-				email: result.value.email,
-			},
+			$or: [
+				{
+					username: result.value.username,
+				},
+				{
+					email: result.value.email,
+				},
 			],
 		}).lean().exec();
 		if (user) {
@@ -571,14 +572,6 @@ module.exports.updateProfile = async (req, res) => {
 				data: null,
 			});
 		}
-	}
-	if (req.file) {
-		const imagePath = `${config.MEDIA_FOLDER}/${req.decodedToken.user.username}/profilePictures/${req.file.filename}`;
-		const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${req.headers.host}/${imagePath}`;
-		result.value.profilePicture = { path: imagePath, url: url, };
-	}
-	else {
-		result.value.profilePicture = null;
 	}
 	result.value.phone = req.body.phone;
 	result.value.gender = req.body.gender;
@@ -604,9 +597,6 @@ module.exports.updateProfile = async (req, res) => {
 			data: null,
 		});
 	}
-	if (updatedUser.profilePicture && updatedUser.profilePicture.path) {
-		await fs.remove(path.resolve('./', updatedUser.profilePicture.path));
-	}
 	updatedUser = await User.findByIdAndUpdate(req.decodedToken.user._id)
 	.select('-createdAt -updatedAt')
 	.exec();
@@ -630,6 +620,58 @@ module.exports.updateProfile = async (req, res) => {
 	res.status(200).json({
 		err: null,
 		msg: 'Profile was updated successfully.',
+		data: token,
+	});
+};
+
+module.exports.changeProfilePicture = async (req, res) => {
+	let setData = {profilePicture: null, updatedAt: moment().toDate()};
+	if (req.file) {
+		const imagePath = `${config.MEDIA_FOLDER}/${req.decodedToken.user.username}/profilePictures/${req.file.filename}`;
+		const url = `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${req.headers.host}/${imagePath}`;
+		setData.profilePicture = { path: imagePath, url: url, };
+	}
+	else {
+		setData.profilePicture = null;
+	}
+
+	let updatedUser = await User.findByIdAndUpdate(
+		req.decodedToken.user._id, {
+			$set: setData,
+		},
+	).exec();
+	if (!updatedUser) {
+		return res.status(404).json({
+			err: null,
+			msg: 'Account not found.',
+			data: null,
+		});
+	}
+	if (updatedUser.profilePicture && updatedUser.profilePicture.path) {
+		await fs.remove(path.resolve('./', updatedUser.profilePicture.path));
+	}
+	updatedUser = await User.findByIdAndUpdate(req.decodedToken.user._id)
+	.select('-createdAt -updatedAt')
+	.exec();
+	if (!updatedUser) {
+		return res.status(404).json({
+			err: null,
+			msg: 'Account not found.',
+			data: null,
+		});
+	}
+	const token = jwt.sign(
+		{
+			user: updatedUser.toObject(),
+		},
+		config.SECRET,
+		{
+			expiresIn: '24h',
+		},
+	);
+	res.status(200).json({
+		err: null,
+		msg: 'Profile picture was updated successfully.',
 		data: token,
 	});
 };
