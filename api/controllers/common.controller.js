@@ -31,18 +31,17 @@ const removeProfileOfPrivate = (question, userId) => {
 module.exports.getQuestions = async (req, res) => {
 	let { offset = 0, limit = 10, search } = req.query;
 	search = search.replace(/([<>*()?])/g, "\\$1");
-	const query = search
-		? {
-			$or: [
-				{
+	const query = {
+		$and: [
+			{ role: "activate" },
+			search? {
 					title: {
 						$regex: search,
 						$options: 'i',
-					},
-				},
-			],
-		}
-		: {};
+					}
+			}: {}
+		]
+	};
 
 	const start = Number(limit) * Number(offset);
 	const size = Number(limit);
@@ -118,42 +117,44 @@ module.exports.getQuestions = async (req, res) => {
 module.exports.getQuestionsCanAnswer = async (req, res) => {
 	let { offset = 0, limit = 20, search } = req.query;
 	search = search.replace(/([<>*()?])/g, "\\$1");
-	const query_search = search
-		? {
-			$or: [
-				{
-					title: {
-						$regex: search,
-						$options: 'i',
-					},
-				},
-				{
-					tag: {
-						$regex: search,
-						$options: 'i',
-					},
-				},
-			],
-		}
-		: {};
-
-	const query_userId = {
+	const query = {
 		$and: [
+			{ role: "activate" },
+			search? {
+				$or: [
+					{
+						title: {
+							$regex: search,
+							$options: 'i',
+						},
+					},
+					{
+						tag: {
+							$regex: search,
+							$options: 'i',
+						},
+					},
+				],
+			}: {},
 			{
-				"answers": {
-					"$not": {
-						"$elemMatch": {
-							"answerer": ObjectId(req.decodedToken.user._id)
+				$and: [
+					{
+						"answers": {
+							"$not": {
+								"$elemMatch": {
+									"answerer": ObjectId(req.decodedToken.user._id)
+								}
+							}
 						}
-					}
-				}
-			},
-			{
-				"asker": {
-					"$ne": ObjectId(req.decodedToken.user._id)
-				}
-			},
-		],
+					},
+					{
+						"asker": {
+							"$ne": ObjectId(req.decodedToken.user._id)
+						}
+					},
+				],
+			}
+		]
 	};
 
 	const defaultCredits = await Credit.findOne({ dataType: "credit" }).exec();
@@ -161,10 +162,9 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
 		defaultCredits.defaultPublicAnswerCredit: 10;
 
 	const resolvedPromises = await Promise.all([
-		Question.count(query_search).exec(),
+		Question.count(query).exec(),
 		Question.aggregate([
-			{ $match: query_search },
-			{ $match: query_userId },
+			{ $match: query },
 			{
 				$addFields: {
 					orderScore: { $add: [{ $ifNull: ["$priority", 3] }, { $ifNull: ["$answerCredit", defaultPublicAnswerCredit] }] },
