@@ -1376,89 +1376,28 @@ module.exports.getFlags = async (req, res) => {
 					from: "questions",
 					localField: "questionId",
 					foreignField: "_id",
-					as: "question"
+					as: "questions"
 				}
+			},
+			{
+				$addFields: {
+					question: { $arrayElemAt: ["$questions", 0] }
+				},
+			},
+			{
+				$addFields: {
+					answer: { 
+						$cond: { 
+							if: "$answerId", 
+							then: { $arrayElemAt: ["$question.answers", { "$indexOfArray": ["$question.answers._id", "$answerId"] }] }, 
+							else: null 
+						} 
+					}
+				},
 			},
 			{
 				$project: {
-					"reportType": 1,
-					"reportNote": 1,
-					"role": 1,
-					"answerId": 1,
-					"reporter": 1,
-					"createdAt": 1,
-					"updatedAt": 1,
-					question: { $arrayElemAt: ["$question", 0] },
-					answers: { $arrayElemAt: ["$question.answers", 0] },
-				}
-			},
-			{
-				$project: {
-					"reportType": 1,
-					"reportNote": 1,
-					"role": 1,
-					"reporter": 1,
-					"createdAt": 1,
-					"updatedAt": 1,
-					"question": 1,
-					answer: { $arrayElemAt: ["$answers", { "$indexOfArray": ["$answers._id", "$answerId"] }] },
-				}
-			},
-			{
-				$lookup: {
-					from: "users",
-					localField: "reporter",
-					foreignField: "_id",
-					as: "reporter"
-				}
-			},
-			{
-				$lookup: {
-					from: "users",
-					localField: "question.asker",
-					foreignField: "_id",
-					as: "asker"
-				}
-			},
-			{
-				$lookup: {
-					from: "users",
-					localField: "answer.answerer",
-					foreignField: "_id",
-					as: "answerer"
-				}
-			},
-			{
-				$project: {
-					"reportType": 1,
-					"reportNote": 1,
-					"role": 1,
-					"createdAt": 1,
-					"updatedAt": 1,
-					"question": 1,
-					"answer": 1,
-					"reporter": { $arrayElemAt: ["$reporter", 0] },
-					"asker": { $arrayElemAt: ["$asker", 0] },
-					"answerer": { $arrayElemAt: ["$answerer", 0] },
-				}
-			},
-			{
-				$project: {
-					"reporter.password": 0,
-					"reporter.resetPasswordToken": 0,
-					"reporter.resetPasswordTokenExpiry": 0,
-					"reporter.verificationToken": 0,
-					"reporter.verificationTokenExpiry": 0,
-					"answerer.password": 0,
-					"answerer.resetPasswordToken": 0,
-					"answerer.resetPasswordTokenExpiry": 0,
-					"answerer.verificationToken": 0,
-					"answerer.verificationTokenExpiry": 0,
-					"asker.password": 0,
-					"asker.resetPasswordToken": 0,
-					"asker.resetPasswordTokenExpiry": 0,
-					"asker.verificationToken": 0,
-					"asker.verificationTokenExpiry": 0,
+					"questions": 0,
 				}
 			},
 			// { $sort : sortVariable },
@@ -1466,7 +1405,32 @@ module.exports.getFlags = async (req, res) => {
 			{ $limit: size }
 		]
 	).exec();
-	console.log(flags);
+
+	await User.populate(
+		flags,
+		{
+			path: 'reporter',
+			select:
+				'-email -password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+		}
+	);
+	await User.populate(
+		flags,
+		{
+			path: 'answerer',
+			select:
+				'-email -password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+		}
+	);
+	await User.populate(
+		flags,
+		{
+			path: 'asker',
+			select:
+				'-email -password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+		}
+	);
+	
 	flags.forEach((element, index) => {
 		element.index = start + index;
 	});
