@@ -241,38 +241,11 @@ module.exports.getQuestionByQuestionId = async (req, res) => {
 			.status(404)
 			.json({ err: null, msg: 'Question not found.', data: null });
 	}
-	const reports = await Question.aggregate(
-		[
-			{
-				$match: {
-					"_id": ObjectId(req.params.questionId)
-				}
-			},
-			{ $unwind: "$answers" },
-			{
-				$project: {
-					answerId: "$answers._id",
-					"_id": 0,
-				}
-			},
-			{
-				$lookup: {
-					from: "reports",
-					localField: "answerId",
-					foreignField: "answerId",
-					as: "reports"
-				}
-			},
-			{ $unwind: "$reports" },
-			{
-				$project: {
-					answerId: 1,
-					reporter: "$reports.reporter",
-				}
-			},
-		]
-	)
-		.exec();
+	const reports = await Report.find({ 
+		"questionId": ObjectId(req.params.questionId)
+	})
+	.exec();
+
 	res.status(200).json({
 		err: null,
 		msg: 'Question retrieved successfully.',
@@ -1352,14 +1325,14 @@ module.exports.addThumb = async (req, res) => {
 }
 
 module.exports.addReport = async (req, res) => {
-	if (!Validations.isObjectId(req.params.questionId)) {
+	if (!Validations.isObjectId(req.body.questionId)) {
 		return res.status(422).json({
 			err: null,
 			msg: 'questionId parameter must be a valid ObjectId.',
 			data: null,
 		});
 	}
-	if (!Validations.isObjectId(req.params.answerId)) {
+	if (req.body.answerId && !Validations.isObjectId(req.body.answerId)) {
 		return res.status(422).json({
 			err: null,
 			msg: 'answerId parameter must be a valid ObjectId.',
@@ -1392,33 +1365,31 @@ module.exports.addReport = async (req, res) => {
 		});
 	}
 
-	let report = await Report.findOne({
-		questionId: req.params.questionId,
-		answerId: req.params.answerId,
-		reporter: req.decodedToken.user._id,
+	let report = await Report.find({
+		$and: [
+			{ "reporter": req.decodedToken.user._id },
+			{ "questionId": req.body.questionId },
+			req.body.answerId ?
+				{
+					"answerId": req.body.answerId
+				} : {"answerId": null},
+		],
 	})
-		.lean()
-		.exec();
-	if (report) {
-		if (report.reportType == req.params.reportType && report.reportNote == req.params.reportNote) {
-			return res.status(403).json({
-				err: null,
-				msg: 'Report already exists, try a different format or rephrasing.',
-				data: null,
-			});
-		}
-		else {
-			report.reportType = req.params.reportType;
-			report.reportNote = req.params.reportNote;
-			await report.save();
-		}
+	.lean()
+	.exec();
+	if (report.length) {
+		return res.status(403).json({
+			err: null,
+			msg: 'Report already exists, try a different format or rephrasing.',
+			data: null,
+		});
 	}
-	else {
-		result.value.questionId = req.params.questionId;
-		result.value.answerId = req.params.answerId;
-		result.value.reporter = req.decodedToken.user._id;
-		report = await Report.create(result.value);
-	}
+	
+	result.value.questionId = req.body.questionId;
+	result.value.answerId = req.body.answerId? req.body.answerId: null;
+	result.value.reporter = req.decodedToken.user._id;
+	report = await Report.create(result.value);
+		
 	newReport = await Report.findById(report._id)
 		.lean()
 		.exec();

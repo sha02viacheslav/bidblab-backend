@@ -472,7 +472,7 @@ router.get(
 	errorHandler(commonCtrl.addThumb),
 );
 router.post(
-	'/common/addReport/:questionId/:answerId',
+	'/common/addReport',
 	isAuthenticated,
 	errorHandler(commonCtrl.addReport),
 );
