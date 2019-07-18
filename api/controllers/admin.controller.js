@@ -11,6 +11,7 @@ const fs = require('fs-extra');
 const User = mongoose.model('User');
 const Question = mongoose.model('Question');
 const Credit = mongoose.model('Credit');
+const Tag = mongoose.model('Tag');
 const Interest = mongoose.model('Interest');
 const Report = mongoose.model('Report');
 const Auction = mongoose.model('Auction');
@@ -586,7 +587,7 @@ module.exports.addQuestion = async (req, res) => {
 		});
 	}
 	for (var index in result.value.tags) {
-		let existingTag = await Interest.findOne({
+		let existingTag = await Tag.findOne({
 			tagName: {
 				$regex: new RegExp("^" + result.value.tags[index] + "$", "i"),
 				$options: 'i',
@@ -597,7 +598,7 @@ module.exports.addQuestion = async (req, res) => {
 		if (existingTag) {
 			result.value.tags[index] = existingTag.tagName;
 		} else {
-			let newTag = await Interest.create({ tagName: result.value.tags[index] });
+			let newTag = await Tag.create({ tagName: result.value.tags[index] });
 		}
 	}
 
@@ -620,7 +621,7 @@ module.exports.getQuestions = async (req, res) => {
 	if (filterTags) {
 		tagFilterFlag = true;
 	}
-	let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
+	let tagsArray = filterTags.replace(/^\[|\]$/g, "").split(",");
 
 	const query =
 	{
@@ -635,7 +636,7 @@ module.exports.getQuestions = async (req, res) => {
 			tagFilterFlag ? {
 				"tags": {
 					"$elemMatch": {
-						"$in": interestArray 
+						"$in": tagsArray 
 					}
 				}
 			} : {},
@@ -809,7 +810,7 @@ module.exports.updateQuestion = async (req, res) => {
 		});
 	}
 	for (var index in result.value.tags) {
-		let existingTag = await Interest.findOne({
+		let existingTag = await Tag.findOne({
 			tagName: {
 				$regex: new RegExp("^" + result.value.tags[index] + "$", "i"),
 				$options: 'i',
@@ -820,7 +821,7 @@ module.exports.updateQuestion = async (req, res) => {
 		if (existingTag) {
 			result.value.tags[index] = existingTag.tagName;
 		} else {
-			let newTag = await Interest.create({ tagName: result.value.tags[index] });
+			let newTag = await Tag.create({ tagName: result.value.tags[index] });
 		}
 	}
 
@@ -1058,7 +1059,7 @@ module.exports.getAnswers = async (req, res) => {
 	if (filterTags) {
 		tagFilterFlag = true;
 	}
-	let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
+	let tagsArray = filterTags.replace(/^\[|\]$/g, "").split(",");
 	const query =
 	{
 		$and: [
@@ -1072,7 +1073,7 @@ module.exports.getAnswers = async (req, res) => {
 			tagFilterFlag ? {
 				"tags": {
 					"$elemMatch": {
-						"$in": interestArray 
+						"$in": tagsArray 
 					}
 				}
 			} : {},
@@ -1171,12 +1172,12 @@ module.exports.getTags = async (req, res) => {
 	else {
 		sortVariable['tagName'] = -1;
 	}
-	let totalTags = await Interest.count(query).exec();
+	let totalTags = await Tag.count(query).exec();
 	let start = Number(limit) * Number(offset);
 	const size = Number(limit);
 	start = totalTags <= start ? 0 : start;
 
-	let tags = await Interest.find(query)
+	let tags = await Tag.find(query)
 		.lean()
 		.sort(sortVariable)
 		.skip(start)
@@ -1218,9 +1219,9 @@ module.exports.addTag = async (req, res) => {
 		});
 	}
 
-	const existingTag = await Interest.findOne({
+	const existingTag = await Tag.findOne({
 		title: {
-			$regex: result.value.tagName,
+			$regex: new RegExp("^" + result.value.tagName + "$", "i"),
 			$options: 'i',
 		},
 	})
@@ -1234,8 +1235,8 @@ module.exports.addTag = async (req, res) => {
 		});
 	}
 
-	let newTag = await Interest.create(result.value);
-	newTag = await Interest.findById(newTag._id).lean().exec();
+	let newTag = await Tag.create(result.value);
+	newTag = await Tag.findById(newTag._id).lean().exec();
 	res.status(201).json({
 		err: null,
 		msg: 'Tag was added successfully.',
@@ -1270,9 +1271,9 @@ module.exports.updateTag = async (req, res) => {
 		});
 	}
 
-	const existingTag = await Interest.findOne({
+	const existingTag = await Tag.findOne({
 		tagName: {
-			$regex: result.value.tagName,
+			$regex: new RegExp("^" + result.value.tagName + "$", "i"),
 			$options: 'i',
 		},
 	})
@@ -1286,7 +1287,7 @@ module.exports.updateTag = async (req, res) => {
 		});
 	}
 
-	const updatedTag = await Interest.findByIdAndUpdate(
+	const updatedTag = await Tag.findByIdAndUpdate(
 		req.params.tagId,
 		{
 			$set: result.value,
@@ -1314,6 +1315,188 @@ module.exports.deleteTags = async (req, res) => {
 	let totalDeleteTags = 0;
 
 	for (let index in req.body) {
+		let deletedTag = await Tag.findByIdAndRemove(req.body[index])
+			.exec();
+		if (deletedTag) {
+			totalDeleteTags++;
+		}
+	}
+	res.status(200).json({
+		err: null,
+		msg: 'Tags were deleted successfully.',
+		data: {
+			totalDeleteTags
+		},
+	});
+};
+
+module.exports.getInterests = async (req, res) => {
+	let { offset = 0, limit = 10, search, active, direction } = req.query;
+	search = search.replace(/([<>*()?])/g, "\\$1");
+	const query = {
+		$and: [
+			search ? {
+				tagName: {
+					$regex: search,
+					$options: 'i',
+				},
+			} : {},
+		],
+	}
+
+	var sortVariable = {};
+	if (direction == 'asc') {
+		sortVariable[active] = 1;
+	}
+	else if (direction == 'desc') {
+		sortVariable[active] = -1;
+	}
+	else {
+		sortVariable['tagName'] = -1;
+	}
+	let totalTags = await Interest.count(query).exec();
+	let start = Number(limit) * Number(offset);
+	const size = Number(limit);
+	start = totalTags <= start ? 0 : start;
+
+	let tags = await Interest.find(query)
+		.lean()
+		.sort(sortVariable)
+		.skip(start)
+		.limit(size)
+		.exec();
+
+	tags.forEach((element, index) => {
+		element.index = start + index;
+	});
+
+	res.status(200).json({
+		err: null,
+		msg: 'Answers retrieved successfully.',
+		data: {
+			totalTags,
+			tags,
+		},
+	});
+};
+
+module.exports.addInterest = async (req, res) => {
+	const schema = joi
+		.object({
+			tagName: joi
+				.string()
+				.trim()
+				.max(20)
+				.required(),
+		})
+		.options({
+			stripUnknown: true,
+		});
+	const result = schema.validate(req.body);
+	if (result.error) {
+		return res.status(422).json({
+			msg: result.error.details[0].message,
+			err: null,
+			data: null,
+		});
+	}
+
+	const existingTag = await Interest.findOne({
+		title: {
+			$regex: new RegExp("^" + result.value.tagName + "$", "i"),
+			$options: 'i',
+		},
+	})
+		.lean()
+		.exec();
+	if (existingTag) {
+		return res.status(403).json({
+			err: null,
+			msg: 'Tag already exists, try a different format or rephrasing.',
+			data: null,
+		});
+	}
+
+	let newTag = await Interest.create(result.value);
+	newTag = await Tag.findById(newTag._id).lean().exec();
+	res.status(201).json({
+		err: null,
+		msg: 'Tag was added successfully.',
+		data: newTag,
+	});
+};
+
+module.exports.updateInterest = async (req, res) => {
+	if (!Validations.isObjectId(req.params.interestId)) {
+		return res.status(200).json({
+			err: null,
+			msg: 'TagId parameter must be a valid ObjectId.',
+			data: null,
+		});
+	}
+	const schema = joi
+		.object({
+			tagName: joi
+				.string()
+				.trim()
+				.max(20),
+		})
+		.options({
+			stripUnknown: true,
+		});
+	const result = schema.validate(req.body);
+	if (result.error) {
+		res.status(200).json({
+			err: null,
+			msg: result.error.details[0].message,
+			data: null,
+		});
+	}
+
+	const existingTag = await Interest.findOne({
+		tagName: {
+			$regex: new RegExp("^" + result.value.tagName + "$", "i"),
+			$options: 'i',
+		},
+	})
+		.lean()
+		.exec();
+	if (existingTag) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Tag already exists, try a different format or rephrasing.',
+			data: null,
+		});
+	}
+
+	const updatedTag = await Interest.findByIdAndUpdate(
+		req.params.interestId,
+		{
+			$set: result.value,
+		},
+	)
+		.lean()
+		.exec();
+	if (!updatedTag) {
+		res.status(200).json({
+			err: null,
+			msg: 'Tag was not found.',
+			data: null,
+		});
+	}
+
+	res.status(200).json({
+		err: null,
+		msg: 'Tag was updated successfully.',
+		data: updatedTag,
+	});
+};
+
+module.exports.deleteInterests = async (req, res) => {
+
+	let totalDeleteTags = 0;
+
+	for (let index in req.body) {
 		let deletedTag = await Interest.findByIdAndRemove(req.body[index])
 			.exec();
 		if (deletedTag) {
@@ -1336,7 +1519,7 @@ module.exports.getFlags = async (req, res) => {
 	if (filterTags) {
 		tagFilterFlag = true;
 	}
-	let interestArray = filterTags.replace(/^\[|\]$/g, "").split(",");
+	let typeArray = filterTags.replace(/^\[|\]$/g, "").split(",");
 	const query =
 	{
 		$and: [
@@ -1349,7 +1532,7 @@ module.exports.getFlags = async (req, res) => {
 				} : {},
 			tagFilterFlag ?
 				{
-					"reportType": { "$in": interestArray }
+					"reportType": { "$in": typeArray }
 				} : {},
 		],
 	}

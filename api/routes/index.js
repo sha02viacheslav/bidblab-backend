@@ -237,6 +237,31 @@ router.post(
 	isAdmin,
 	errorHandler(adminCtrl.deleteTags),
 );
+// ------------Interests------------
+router.get(
+	'/admin/getInterests',
+	isAuthenticated,
+	isAdmin,
+	errorHandler(adminCtrl.getInterests)
+);
+router.post(
+	'/admin/addInterest',
+	isAuthenticated,
+	isAdmin,
+	errorHandler(adminCtrl.addInterest),
+);
+router.post(
+	'/admin/updateInterest/:interestId',
+	isAuthenticated,
+	isAdmin,
+	errorHandler(adminCtrl.updateInterest),
+);
+router.post(
+	'/admin/deleteInterests',
+	isAuthenticated,
+	isAdmin,
+	errorHandler(adminCtrl.deleteInterests),
+);
 // ------------Flag------------
 router.get(
 	'/admin/getFlags',
@@ -482,8 +507,12 @@ router.post(
 	errorHandler(commonCtrl.addReport),
 );
 router.get(
-	'/common/getStandardInterests',
-	errorHandler(commonCtrl.getStandardInterests),
+	'/common/getAllTags',
+	errorHandler(commonCtrl.getAllTags),
+);
+router.get(
+	'/common/getAllInterests',
+	errorHandler(commonCtrl.getAllInterests),
 );
 router.get(
 	'/common/getDefaultCredits',

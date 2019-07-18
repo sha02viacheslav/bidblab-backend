@@ -78,6 +78,7 @@ require('../models/user.model');
 require('../models/admin.model');
 require('../models/question.model');
 require('../models/report.model');
+require('../models/tag.model');
 require('../models/interest.model');
 require('../models/credit.model');
 require('../models/auction.model');

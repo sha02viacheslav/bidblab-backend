@@ -11,6 +11,7 @@ const requestIp = require('request-ip');
 const Question = mongoose.model('Question');
 const User = mongoose.model('User');
 const Report = mongoose.model('Report');
+const Tag = mongoose.model('Tag');
 const Interest = mongoose.model('Interest');
 const Credit = mongoose.model('Credit');
 const Auction = mongoose.model('Auction');
@@ -296,10 +297,10 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
 	}
 
 	let tagFilterFlag = false;
-	if (req.query.interestFilter) {
+	if (req.query.tagFilter) {
 		tagFilterFlag = true;
 	}
-	let interestArray = req.query.interestFilter.replace(/^\[|\]$/g, "").split(",");
+	let tagsArray = req.query.tagFilter.replace(/^\[|\]$/g, "").split(",");
 
 	const query = {
 		$and: [
@@ -314,7 +315,7 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
 			tagFilterFlag ? {
 				"tags": {
 					"$elemMatch": {
-						"$in": interestArray 
+						"$in": tagsArray 
 					}
 				}
 			} : {},
@@ -397,10 +398,10 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
 	}
 
 	let tagFilterFlag = false;
-	if (req.query.interestFilter) {
+	if (req.query.tagFilter) {
 		tagFilterFlag = true;
 	}
-	let interestArray = req.query.interestFilter.replace(/^\[|\]$/g, "").split(",");
+	let tagsArray = req.query.tagFilter.replace(/^\[|\]$/g, "").split(",");
 
 	const query = {
 		$and: [
@@ -408,7 +409,7 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
 			tagFilterFlag ? {
 				"tags": {
 					"$elemMatch": {
-						"$in": interestArray 
+						"$in": tagsArray 
 					}
 				}
 			} : {},
@@ -785,7 +786,7 @@ module.exports.addQuestion = async (req, res) => {
 		});
 	}
 	for (var index in result.value.tags) {
-		let existingTag = await Interest.findOne({
+		let existingTag = await Tag.findOne({
 			tagName: {
 				$regex: new RegExp("^" + result.value.tags[index] + "$", "i"),
 				$options: 'i',
@@ -794,7 +795,7 @@ module.exports.addQuestion = async (req, res) => {
 		if (existingTag) {
 			result.value.tags[index] = existingTag.tagName;
 		} else {
-			let newTag = await Interest.create({ tagName: result.value.tags[index] });
+			let newTag = await Tag.create({ tagName: result.value.tags[index] });
 		}
 	}
 
@@ -1405,8 +1406,31 @@ module.exports.addReport = async (req, res) => {
 	});
 }
 
+module.exports.getAllTags = async (req, res) => {
+	const tags = await Tag.aggregate([
+		{
+			$group: {
+				_id: null,
+				tags: { $addToSet: "$tagName" }
+			}
+		}
+	]).exec();
+	if (!tags.length) {
+		res.status(200).json({
+			err: null,
+			msg: 'Tags were not found.',
+			data: null
+		});
+	}
 
-module.exports.getStandardInterests = async (req, res) => {
+	res.status(200).json({
+		err: null,
+		msg: 'Tags were found successfully.',
+		data: tags[0].tags,
+	});
+}
+
+module.exports.getAllInterests = async (req, res) => {
 	const standardInterests = await Interest.aggregate([
 		{
 			$group: {
@@ -1418,14 +1442,14 @@ module.exports.getStandardInterests = async (req, res) => {
 	if (!standardInterests.length) {
 		res.status(200).json({
 			err: null,
-			msg: 'StandardInterests was not found.',
+			msg: 'Standard interests were not found.',
 			data: null
 		});
 	}
 
 	res.status(200).json({
 		err: null,
-		msg: 'StandardInterests was found successfully.',
+		msg: 'Standard interests were found successfully.',
 		data: standardInterests[0].interests,
 	});
 }
