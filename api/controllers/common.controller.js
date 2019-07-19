@@ -239,6 +239,11 @@ module.exports.getQuestionByQuestionId = async (req, res) => {
 			select:
 				'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
 		})
+		.populate({
+			path: 'skips.skipper',
+			select:
+				'-password -verified -resetPasswordToken -resetPasswordTokenExpiry -verificationToken -verificationTokenExpiry',
+		})
 		.exec();
 
 	question.answers = question.answers.filter(element => element.role == 'activate');
