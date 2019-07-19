@@ -879,6 +879,18 @@ module.exports.addAnswer = async (req, res) => {
 			data: null,
 		});
 	}
+	if(question.skips) {
+		const alreadySkipped = question.skips.some(
+			skip => skip.skipper == req.decodedToken.user._id,
+		);
+		if (alreadySkipped && !req.decodedToken.admin) {
+			return res.status(200).json({
+				err: null,
+				msg: 'You have already skipped this question.',
+				data: null,
+			});
+		}
+	}
 	result.value.answerer = req.decodedToken.admin
 		? null
 		: req.decodedToken.user._id;
