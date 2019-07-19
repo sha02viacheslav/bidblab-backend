@@ -479,6 +479,11 @@ router.post(
 	isAuthenticated,
 	errorHandler(commonCtrl.addAnswer),
 );
+router.get(
+	'/common/skipAnswer/:questionId',
+	isAuthenticated,
+	errorHandler(commonCtrl.skipAnswer),
+);
 router.patch(
 	'/common/addQuestion',
 	isAuthenticated,

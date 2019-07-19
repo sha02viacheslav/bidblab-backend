@@ -66,6 +66,18 @@ const answerSchema = mongoose.Schema({
 	},
 });
 
+const skipSchema = mongoose.Schema({
+	skipper: {
+		type: mongoose.SchemaTypes.ObjectId,
+		ref: 'User',
+	},
+	createdAt: {
+		type: Date,
+		default: Date.now,
+	},
+	updatedAt: Date,
+});
+
 const questionSchema = mongoose.Schema({
 	asker: {
 		type: mongoose.SchemaTypes.ObjectId,
@@ -77,6 +89,7 @@ const questionSchema = mongoose.Schema({
 		trim: true,
 	},
 	answers: [answerSchema],
+	skips: [skipSchema],
 	follows: [followSchema],
 	tags: {
 		type: [String],

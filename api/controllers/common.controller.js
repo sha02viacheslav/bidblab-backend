@@ -149,6 +149,15 @@ module.exports.getQuestionsCanAnswer = async (req, res) => {
 						}
 					},
 					{
+						"skips": {
+							"$not": {
+								"$elemMatch": {
+									"skipper": ObjectId(req.decodedToken.user._id)
+								}
+							}
+						}
+					},
+					{
 						"asker": {
 							"$ne": ObjectId(req.decodedToken.user._id)
 						}
@@ -911,6 +920,69 @@ module.exports.addAnswer = async (req, res) => {
 		err: null,
 		msg: 'Answer was added successfully.',
 		data: answer,
+	});
+};
+
+module.exports.skipAnswer = async (req, res) => {
+	if (!Validations.isObjectId(req.params.questionId)) {
+		return res.status(200).json({
+			err: 'questionId parameter must be a valid ObjectId.',
+			msg: null,
+			data: null,
+		});
+	}
+
+	const question = await Question.findById(req.params.questionId).exec();
+	if (!question) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Question not found.',
+			data: null,
+		});
+	}
+	if (question.asker && question.asker == req.decodedToken.user._id) {
+		return res.status(200).json({
+			err: null,
+			msg: 'You can not skip a question you asked.',
+			data: null,
+		});
+	}
+	if(question.skips) {
+		const alreadySkipped = question.skips.some(
+			skip => skip.skipper == req.decodedToken.user._id,
+		);
+		if (alreadySkipped && !req.decodedToken.admin) {
+			return res.status(200).json({
+				err: null,
+				msg: 'You have already skipped this question.',
+				data: null,
+			});
+		}
+	}
+	const alreadyAnswered = question.answers.some(
+		answer => answer.answerer == req.decodedToken.user._id,
+	);
+	if (alreadyAnswered && !req.decodedToken.admin) {
+		return res.status(200).json({
+			err: null,
+			msg: 'You have already answered this question.',
+			data: null,
+		});
+	}
+	let setData = {skipper: req.decodedToken.admin? null: req.decodedToken.user._id};
+
+	let skip = question.skips.create(setData);
+	question.skips.push(skip);
+	question.updatedAt = moment().toDate();
+	await question.save();
+	if (!req.decodedToken.admin) {
+		skip = skip.toObject();
+		skip.skipper = req.decodedToken.user;
+	}
+	res.status(200).json({
+		err: null,
+		msg: 'Skip was added successfully.',
+		data: skip,
 	});
 };
 
