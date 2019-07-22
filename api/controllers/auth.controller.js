@@ -266,30 +266,36 @@ module.exports.adminLogin = async (req, res) => {
 };
 
 module.exports.verifyAccount = async (req, res) => {
-	const user = await User.findOne({
+	let user = await User.findOne({
 		verificationToken: req.params.verificationToken,
-		verificationTokenExpiry: {
-			$gt: moment().toDate(),
-		},
+		verified: true
 	}).exec();
-	if (!user) {
-		return res.status(422).json({
-			err: null,
-			msg:
-				'Verification token is invalid or has expired, you can resend the verification email and try again.',
-			data: null,
-		});
-	}
+	if(user) {
+		user.verificationToken = undefined;
+	} else {
+		user = await User.findOne({
+			verificationToken: req.params.verificationToken,
+			verificationTokenExpiry: {
+				$gt: moment().toDate(),
+			},
+		}).exec();
+		if (!user) {
+			return res.status(200).json({
+				err: null,
+				msg: 'Verification token is invalid or has expired, you can resend the verification email and try again.',
+				data: null,
+			});
+		}
 
-	const invite = await Invite.findOne({ friendEmail: user.email }).exec();
-	if (invite) {
-		invite.success = true;
-		await invite.save();
-	}
+		const invite = await Invite.findOne({ friendEmail: user.email }).exec();
+		if (invite) {
+			invite.success = true;
+			await invite.save();
+		}
 
-	user.verificationToken = undefined;
-	user.verificationTokenExpiry = undefined;
-	user.verified = true;
+		user.verificationTokenExpiry = undefined;
+		user.verified = true;
+	}
 	await user.save();
 
 	const token = jwt.sign(
