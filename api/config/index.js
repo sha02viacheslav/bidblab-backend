@@ -28,7 +28,7 @@ module.exports = {
     },
   },
   SQUARE: {
-    squareAccessToken: 'EAAAEJe7x4H5Ln7aOHjRdyVK8kE4eLiniqcKGiHy7aoNmPDJlqR2g3zFxQhK-vZC',
+    squareAccessToken: 'EAAAEMBoOzDuLADLNKBVOqBBsgc6sCRY8Pp60XQRkMxYcC2Sdn-UtDWvZpZT3ZHO',
     squareLocationId: '5SAF2VX4HZP44'
   },
   MEDIA_FOLDER: 'uploads',
