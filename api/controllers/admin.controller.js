@@ -21,22 +21,6 @@ const Invite = mongoose.model('Invite');
 
 const ObjectId = mongoose.Types.ObjectId;
 
-const changeAuctionRole = async () => {
-	const auctions = await Auction.find().exec();
-	for (var index in auctions) {
-		if (auctions[index].starts > new Date()) {
-			auctions[index].role = global.auctionRole.pending;
-		}
-		else if (auctions[index].closes > new Date()) {
-			auctions[index].role = global.auctionRole.process;
-		}
-		else {
-			auctions[index].role = global.auctionRole.closed;
-		}
-		await auctions[index].save();
-	}
-};
-
 module.exports.createUser = async (req, res) => {
 	const schema = joi
 		.object({
@@ -1681,7 +1665,7 @@ module.exports.deleteFlags = async (req, res) => {
 };
 
 module.exports.getPendingAuctions = async (req, res) => {
-	global.changeAuctionRole();
+	await global.changeAuctionRole();
 	let { offset = 0, limit = 10, search, auctionType = 0, active, direction } = req.query;
 	search = search.replace(/([<>*()?])/g, "\\$1");
 	const query =
@@ -1695,7 +1679,11 @@ module.exports.getPendingAuctions = async (req, res) => {
 					},
 				} : {},
 			{
-				role: auctionType
+				role: { 
+					$bitsAnySet: [
+						global.data().auctionRole.pending
+					] 
+				} 
 			},
 		],
 	};
@@ -1739,7 +1727,7 @@ module.exports.getPendingAuctions = async (req, res) => {
 };
 
 module.exports.getProcessAuctions = async (req, res) => {
-	global.changeAuctionRole();
+	await global.changeAuctionRole();
 	let { offset = 0, limit = 10, search, auctionType = 0, active, direction } = req.query;
 	search = search.replace(/([<>*()?])/g, "\\$1");
 	const query =
@@ -1753,7 +1741,11 @@ module.exports.getProcessAuctions = async (req, res) => {
 					},
 				} : {},
 			{
-				role: auctionType
+				role: { 
+					$bitsAnySet: [
+						global.data().auctionRole.process
+					] 
+				} 
 			},
 		],
 	};
@@ -1803,7 +1795,7 @@ module.exports.getProcessAuctions = async (req, res) => {
 };
 
 module.exports.getClosedAuctions = async (req, res) => {
-	global.changeAuctionRole();
+	await global.changeAuctionRole();
 	let { offset = 0, limit = 10, search, auctionType = 0, active, direction } = req.query;
 	search = search.replace(/([<>*()?])/g, "\\$1");
 	const query =
@@ -1817,7 +1809,11 @@ module.exports.getClosedAuctions = async (req, res) => {
 					},
 				} : {},
 			{
-				role: auctionType
+				role: { 
+					$bitsAnySet: [
+						global.data().auctionRole.closed
+					] 
+				} 
 			},
 			// tagFilterFlag?{
 			//     "tag": { "$in": interestArray }
@@ -1858,7 +1854,6 @@ module.exports.getClosedAuctions = async (req, res) => {
 		auctions[key].index = start + Number(key);
 		auctions[key] = await module.exports.checkBids(auctions[key]);
 	}
-
 	res.status(200).json({
 		err: null,
 		msg: 'Auctions retrieved successfully.',
@@ -1989,7 +1984,7 @@ module.exports.addAuction = async (req, res) => {
 		});
 	}
 
-	result.value.role = global.data().auctionRole.pending;
+	result.value.role &= 1 << global.data().auctionRole.pending;
 	result.value.auctionDetail = req.body.auctionDetail;
 	const newAuction = await Auction.create(result.value);
 
@@ -2089,13 +2084,13 @@ module.exports.updateAuction = async (req, res) => {
 	}
 
 	if (result.value.starts > new Date()) {
-		result.value.role = global.data().auctionRole.pending;
+		result.value.role &= 1 << global.data().auctionRole.pending;
 	}
 	else if (result.value.closes < new Date()) {
-		result.value.role = global.data().auctionRole.process;
+		result.value.role &= 1 << global.data().auctionRole.process;
 	}
 	else {
-		result.value.role = global.data().auctionRole.closed;
+		result.value.role &= 1 << global.data().auctionRole.closed;
 	}
 	result.value.auctionDetail = req.body.auctionDetail;
 	result.value.updatedAt = moment().toDate();
@@ -2328,8 +2323,7 @@ module.exports.checkBids = async (auction) => {
 		auction.bids[index].bidStatus = 0;
 		if (tempBids.some(item => item.bidPrice == auction.bids[index].bidPrice && item._id != auction.bids[index]._id)) {
 			auction.bids[index].bidStatus = 1 << 0;
-		}
-		else {
+		} else {
 			// uniqueBids.push(auction.auction.bids[index]);
 			if (!maxUniqueBid || maxUniqueBid.bidPrice < auction.bids[index].bidPrice) {
 				maxUniqueBid = auction.bids[index];
@@ -2340,11 +2334,9 @@ module.exports.checkBids = async (auction) => {
 	if (maxUniqueBid) {
 		let temp = auction.bids.find(item => item._id == auction.maxUniqueBid._id);
 		temp.bidStatus |= 1 << 1;
-		console.log("temp=", temp);
 	}
 
 	return auction;
-
 }
 
 module.exports.saveAbout = async (req, res) => {

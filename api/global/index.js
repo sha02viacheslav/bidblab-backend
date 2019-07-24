@@ -30,11 +30,10 @@ module.exports.data = () => {
 			all: 31
 		},
 		auctionRole: {
-			pending: 1,
-			process: 2,
-			closed: 4,
-			deleted: 8,
-			all: 15
+			pending: 0,
+			process: 1,
+			closed: 2,
+			sold: 3,
 		}
 	}
 };
@@ -42,15 +41,22 @@ module.exports.data = () => {
 module.exports.changeAuctionRole = async () => {
 	const auctions = await Auction.find().exec();
 	for (var index in auctions) {
+		var roleTemp = auctions[index].role;
+		// Clear time related bit of auction role.
+		auctions[index].role &= ~(1 << module.exports.data().auctionRole.pending);
+		auctions[index].role &= ~(1 << module.exports.data().auctionRole.process);
+		auctions[index].role &= ~(1 << module.exports.data().auctionRole.closed);
+		// Update time related bit of auction role.
 		if (auctions[index].starts > new Date()) {
-			auctions[index].role = module.exports.data().auctionRole.pending;
+			auctions[index].role |= 1 << module.exports.data().auctionRole.pending;
+		} else if (auctions[index].closes > new Date()) {
+			auctions[index].role |= 1 << module.exports.data().auctionRole.process;
+		} else {
+			auctions[index].role |= 1 << module.exports.data().auctionRole.closed;
 		}
-		else if (auctions[index].closes > new Date()) {
-			auctions[index].role = module.exports.data().auctionRole.process;
+		if(roleTemp != auctions[index].role) {
+			await auctions[index].save();
 		}
-		else {
-			auctions[index].role = module.exports.data().auctionRole.closed;
-		}
-		await auctions[index].save();
+		
 	}
 };

@@ -1561,13 +1561,19 @@ module.exports.getDefaultCredits = async (req, res) => {
 }
 
 module.exports.getAuctions = async (req, res) => {
-	global.changeAuctionRole();
+	await global.changeAuctionRole();
 	let { offset = 0, limit = 10, search, auctionType = 0 } = req.query;
 	search = search.replace(/([<>*()?])/g, "\\$1");
 	const query = {
 		$or: [
-			{ role: global.data().auctionRole.process },
-			{ role: global.data().auctionRole.closed }
+			{ 
+				role: { 
+					$bitsAnySet: [
+						global.data().auctionRole.process, 
+						global.data().auctionRole.closed
+					] 
+				} 
+			}
 		]
 	};
 	const start = Number(limit) * Number(offset);
@@ -1593,7 +1599,9 @@ module.exports.getAuctions = async (req, res) => {
 
 	for (var key in auctions) {
 		auctions[key] = await module.exports.checkBids(auctions[key]);
-		if (auctions[key].role != global.data().auctionRole.closed) {
+		auctions[key].maxUniqueBid = auctions[key].maxUniqueBid.bidder? auctions[key].maxUniqueBid.bidder: null;
+		// Delete bid status of auction in progress
+		if (!(auctions[key].role & (1 << global.data().auctionRole.closed))) {
 			auctions[key].bids = [];
 		}
 	}
@@ -1609,13 +1617,19 @@ module.exports.getAuctions = async (req, res) => {
 };
 
 module.exports.getAuctionsAfterLogin = async (req, res) => {
-	global.changeAuctionRole();
+	await global.changeAuctionRole();
 	let { offset = 0, limit = 10, search, auctionType = 0 } = req.query;
 	search = search.replace(/([<>*()?])/g, "\\$1");
 	const query = {
 		$or: [
-			{ role: global.data().auctionRole.process },
-			{ role: global.data().auctionRole.closed }
+			{ 
+				role: { 
+					$bitsAnySet: [
+						global.data().auctionRole.process, 
+						global.data().auctionRole.closed
+					] 
+				} 
+			}
 		]
 	};
 	const start = Number(limit) * Number(offset);
@@ -1641,7 +1655,9 @@ module.exports.getAuctionsAfterLogin = async (req, res) => {
 
 	for (var key in auctions) {
 		auctions[key] = await module.exports.checkBids(auctions[key]);
-		if (auctions[key].role != global.data().auctionRole.closed) {
+		auctions[key].maxUniqueBid = auctions[key].maxUniqueBid.bidder? auctions[key].maxUniqueBid.bidder: null;
+		// Delete bid status of auction in progress
+		if (!(auctions[key].role & (1 << global.data().auctionRole.closed))) {
 			auctions[key] = await module.exports.removeOtherBids(req.decodedToken.user._id, auctions[key]);
 		}
 	}
@@ -1657,7 +1673,7 @@ module.exports.getAuctionsAfterLogin = async (req, res) => {
 };
 
 module.exports.getBiddingAuctions = async (req, res) => {
-	global.changeAuctionRole();
+	await global.changeAuctionRole();
 	let { offset = 0, limit = 10, search, auctionType = 0 } = req.query;
 	search = search.replace(/([<>*()?])/g, "\\$1");
 	const start = Number(limit) * Number(offset);
@@ -1674,8 +1690,14 @@ module.exports.getBiddingAuctions = async (req, res) => {
 			},
 			{
 				$or: [
-					{ role: global.data().auctionRole.process },
-					{ role: global.data().auctionRole.closed }
+					{ 
+						role: { 
+							$bitsAnySet: [
+								global.data().auctionRole.process, 
+								global.data().auctionRole.closed
+							] 
+						} 
+					}
 				]
 			},
 		],
@@ -1701,7 +1723,9 @@ module.exports.getBiddingAuctions = async (req, res) => {
 
 	for (var key in auctions) {
 		auctions[key] = await module.exports.checkBids(auctions[key]);
-		if (auctions[key].role != global.data().auctionRole.closed) {
+		auctions[key].maxUniqueBid = auctions[key].maxUniqueBid.bidder? auctions[key].maxUniqueBid.bidder: null;
+		// Delete bid status of auction in progress
+		if (!(auctions[key].role & (1 << global.data().auctionRole.closed))) {
 			auctions[key] = await module.exports.removeOtherBids(req.decodedToken.user._id, auctions[key]);
 		}
 	}
@@ -1717,7 +1741,7 @@ module.exports.getBiddingAuctions = async (req, res) => {
 };
 
 module.exports.getAuctionById = async (req, res) => {
-	global.changeAuctionRole();
+	await global.changeAuctionRole();
 
 	if (!Validations.isObjectId(req.params.auctionId)) {
 		return res.status(422).json({
@@ -1737,7 +1761,9 @@ module.exports.getAuctionById = async (req, res) => {
 		.exec();
 
 	auction = await module.exports.checkBids(auction);
-	if (auction.role != global.data().auctionRole.closed) {
+	auction.maxUniqueBid = auction.maxUniqueBid.bidder? auction.maxUniqueBid.bidder: null;
+	// Delete bid status of auction in progress
+	if (!(auction.role & (1 << global.data().auctionRole.closed))) {
 		auction = await module.exports.removeOtherBids(req.decodedToken.user._id, auction);
 	}
 
@@ -1758,15 +1784,15 @@ module.exports.checkBids = async (auction) => {
 		auction.bids[index].bidStatus = 0;
 		if (tempBids.some(item => item.bidPrice == auction.bids[index].bidPrice && item._id != auction.bids[index]._id)) {
 			auction.bids[index].bidStatus = 1 << 0;
-		}
-		else {
+		} else {
 			// uniqueBids.push(auction.auction.bids[index]);
 			if (!maxUniqueBid || maxUniqueBid.bidPrice < auction.bids[index].bidPrice) {
 				maxUniqueBid = auction.bids[index];
 			}
 		}
 	}
-	auction.maxUniqueBid = maxUniqueBid.bidder? maxUniqueBid.bidder: null;
+	// auction.maxUniqueBid = maxUniqueBid.bidder? maxUniqueBid.bidder: null;
+	auction.maxUniqueBid = maxUniqueBid;
 	if (maxUniqueBid) {
 		let temp = auction.bids.find(item => item._id == maxUniqueBid._id);
 		temp.bidStatus |= 1 << 1;
@@ -2388,24 +2414,60 @@ module.exports.invite = async (req, res) => {
 };
 
 module.exports.squarePay = async (req, res) => {
-
-	var request_params = req.body;
-	console.log('payparam=', req.body);
+	if (!Validations.isObjectId(req.body.auctionId)) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Auction is invalid.',
+			data: null,
+		});
+	}
+	let auction = await Auction.findById(req.body.auctionId).exec();
+	if(!auction) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Auction was not found.',
+			data: null,
+		});
+	}
+	if(auction.role & ( 1 << global.data().auctionRole.sold)) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Auction was sold already.',
+			data: null,
+		});
+	}
+	if(!(auction.role & ( 1 << global.data().auctionRole.closed))) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Auction was not closed.',
+			data: null,
+		});
+	}
+	auction = await module.exports.checkBids(auction);
+	if(!(auction.maxUniqueBid && auction.maxUniqueBid.bidder == req.decodedToken.user._id)) {
+		return res.status(200).json({
+			err: null,
+			msg: 'You are not winner.',
+			data: null,
+		});
+	}
 
 	var idempotency_key = require('crypto').randomBytes(64).toString('hex');
 
 	// Charge the customer's card
 	var transactions_api = new squareConnect.TransactionsApi();
 	var request_body = {
-		card_nonce: request_params.nonce,
+		card_nonce: req.body.nonce,
 		amount_money: {
-			amount: 100, // $1.00 charge
+			amount: auction.maxUniqueBid.bidPrice * 100, // $1.00 charge
 			currency: 'USD'
 		},
 		idempotency_key: idempotency_key
 	};
-	await transactions_api.charge(config.SQUARE.squareLocationId, request_body).then(function (data) {
+	transactions_api.charge(config.SQUARE.squareLocationId, request_body).then(async function (data) {
 		var json = JSON.stringify(data);
+		auction.role |= global.data().auctionRole.sold;
+		await auction.save();
 		res.status(200).json({
 			err: null,
 			msg: 'Payment Successful.',
@@ -2414,7 +2476,7 @@ module.exports.squarePay = async (req, res) => {
 	}, function (error) {
 		res.status(200).json({
 			err: null,
-			msg: error.response.text,
+			msg: error.response.body.errors[0].detail,
 			data: null
 		});
 	});
