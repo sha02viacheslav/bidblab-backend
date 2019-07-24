@@ -1958,25 +1958,8 @@ module.exports.addAuction = async (req, res) => {
 			data: null,
 		});
 	}
-
-	let auction = await Auction.aggregate(
-		[
-			{
-				$group: {
-					_id: "null",
-					maxAuctionSerial: {
-						$max: '$auctionSerial'
-					},
-					cntAuctionSerial: {
-						$sum: 1
-					},
-				}
-			}
-		]
-	)
-		.exec();
-
-	if (auction && auction.maxAuctionSerial && auction.maxAuctionSerial + 1 != req.body.auctionSerial) {
+	let finalAuctionSerial = await getNextAuctionSerial();
+	if (finalAuctionSerial != req.body.auctionSerial) {
 		res.status(200).json({
 			err: null,
 			msg: 'AuctionID is invalid. Try again.',
@@ -2130,8 +2113,7 @@ module.exports.updateAuction = async (req, res) => {
 	});
 };
 
-module.exports.getDataForAddAuction = async (req, res) => {
-
+getNextAuctionSerial = async () => {
 	let auction = await Auction.aggregate(
 		[
 			{
@@ -2146,8 +2128,7 @@ module.exports.getDataForAddAuction = async (req, res) => {
 				}
 			}
 		]
-	)
-		.exec();
+	).exec();
 
 	let maxAuctionSerial = 0;
 	if (auction.length && auction[0].maxAuctionSerial) {
@@ -2155,11 +2136,18 @@ module.exports.getDataForAddAuction = async (req, res) => {
 	}
 	maxAuctionSerial++;
 
+	return maxAuctionSerial;
+};
+
+module.exports.getDataForAddAuction = async (req, res) => {
+
+	let finalAuctionSerial = await getNextAuctionSerial();
+
 	res.status(200).json({
 		err: null,
-		msg: 'Auctions was suspended successfully.',
+		msg: 'Auction serial was found successfully.',
 		data: {
-			finalAuctionSerial: maxAuctionSerial,
+			finalAuctionSerial: finalAuctionSerial,
 		},
 	});
 };
