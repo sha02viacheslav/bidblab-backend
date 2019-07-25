@@ -35,13 +35,13 @@ app.use(
 if (process.env.NODE_ENV !== 'production') {
 	app.use(
 		`/${config.MEDIA_FOLDER}`,
-		express.static(path.join(__dirname, config.MEDIA_FOLDER)),
+		express.static(path.join(__dirname, '/../' + config.MEDIA_FOLDER)),
 	);
 }
 else {
 	app.use(
 		`/${config.MEDIA_FOLDER}`,
-		express.static(path.join(__dirname, config.MEDIA_FOLDER)),
+		express.static(path.join(__dirname, '/../' + config.MEDIA_FOLDER)),
 	);
 }
 app.use('/api', routes);

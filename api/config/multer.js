@@ -8,7 +8,7 @@ module.exports = (folder, allowedTypes) =>
   multer({
     storage: multer.diskStorage({
       destination(req, file, callback) {
-        const dest = path.resolve(`./${config.MEDIA_FOLDER}/${folder}`);
+        const dest = path.resolve(`../${config.MEDIA_FOLDER}/${folder}`);
         fs.ensureDirSync(dest);
         callback(null, dest);
       },
