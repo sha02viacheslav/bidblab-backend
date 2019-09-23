@@ -52,7 +52,7 @@ const userSchema = mongoose.Schema({
 	},
 	gender: {
 		type: String,
-		default: 'male',
+		default: '',
 	},
 	physicaladdress: {
 		type: String,

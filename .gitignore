@@ -26,6 +26,9 @@ build/Release
 # https://docs.npmjs.com/cli/shrinkwrap#caveats
 node_modules
 
+package-lock.json
+yarn.lock
+
 # Debug log from npm
 npm-debug.log
 
