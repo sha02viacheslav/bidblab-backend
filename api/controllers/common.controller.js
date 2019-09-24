@@ -2400,7 +2400,7 @@ module.exports.invite = async (req, res) => {
 		from: 'Bidblab <support@bidblab.com>',
 		to: invite.friendEmail,
 		subject: 'Invite',
-		html: `<p>Hello, ${referrer.firstName} ${referrer.lastName} invite you to BidBlab.com, 
+		html: `<p>Hello, ${referrer.username} invite you to BidBlab.com, 
       		please click on the following link to agree: <a href="${
 			config.FRONTEND_URI
 			}/extra/signup/${invite.friendEmail}">Sign up</a></p>`,
