@@ -681,3 +681,68 @@ module.exports.changeProfilePicture = async (req, res) => {
 		data: token,
 	});
 };
+
+module.exports.adminChangePassword = async (req, res) => {
+	const schema = joi
+		.object({
+			currentPassword: joi
+				.string()
+				.trim()
+				.required(),
+			password: joi
+				.string()
+				.trim()
+				.required()
+				.min(8),
+			confirmPassword: joi
+				.string()
+				.trim()
+				.required()
+				.equal(req.body.password),
+		})
+		.options({ stripUnknown: true });
+	const result = schema.validate(req.body);
+	if (result.error) {
+		return res.status(422).json({
+			err: null,
+			msg: result.error.details[0].message,
+			data: null,
+		});
+	}
+	const user = await Admin.findById(req.decodedToken.user._id).exec();
+	if (!user) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Account not found.',
+			data: null,
+		});
+	}
+	const passwordMatches = await Encryption.comparePasswordToHash(
+		result.value.currentPassword,
+		user.password,
+	);
+	if (!passwordMatches) {
+		return res.status(200).json({
+			err: null,
+			msg: 'Current password is incorrect.',
+			data: null,
+		});
+	}
+	user.password = await Encryption.hashPassword(result.value.password);
+	await user.save();
+	const token = jwt.sign(
+		{
+			user: user.toObject(),
+			admin: true,
+		},
+		config.SECRET,
+		{
+			expiresIn: '24h',
+		},
+	);
+	res.status(200).json({
+		err: null,
+		msg: 'Password was changed successfully.',
+		data: token,
+	});
+};

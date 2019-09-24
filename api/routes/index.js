@@ -87,6 +87,12 @@ router.post(
 	isNotAuthenticated,
 	errorHandler(authCtrl.adminLogin),
 );
+router.post(
+	'/auth/adminChangePassword',
+	isAuthenticated,
+	isAdmin,
+	errorHandler(authCtrl.adminChangePassword),
+);
 router.patch(
 	'/auth/verifyAccount/:verificationToken',
 	errorHandler(authCtrl.verifyAccount),
