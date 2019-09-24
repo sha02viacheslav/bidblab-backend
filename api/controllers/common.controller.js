@@ -2464,14 +2464,18 @@ module.exports.squarePay = async (req, res) => {
 		},
 		idempotency_key: idempotency_key
 	};
+	
 	transactions_api.charge(config.SQUARE.squareLocationId, request_body).then(async function (data) {
 		var json = JSON.stringify(data);
-		auction.role |= global.data().auctionRole.sold;
+		auction.role |= (1 << global.data().auctionRole.sold);
 		await auction.save();
 		res.status(200).json({
 			err: null,
 			msg: 'Payment Successful.',
-			data: json
+			data: {
+				json,
+				auctionRole: auction.role
+			}
 		});
 	}, function (error) {
 		res.status(200).json({
