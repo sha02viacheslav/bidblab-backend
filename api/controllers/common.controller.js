@@ -990,7 +990,6 @@ module.exports.skipAnswer = async (req, res) => {
 
 	let skip = question.skips.create(setData);
 	question.skips.push(skip);
-	question.updatedAt = moment().toDate();
 	await question.save();
 	if (!req.decodedToken.admin) {
 		skip = skip.toObject();
