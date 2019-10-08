@@ -93,15 +93,6 @@ module.exports.getQuestions = async (req, res) => {
 
 	questions.forEach(question => {
 		question.answers = question.answers.filter(element => element.role == 'activate');
-		question.answers.sort((a, b) => {
-			const a_thumbupcnt = a.thumbupcnt ? a.thumbupcnt : 0;
-			const b_thumbupcnt = b.thumbupcnt ? b.thumbupcnt : 0;
-			const a_thumbdowncnt = a.thumbdowncnt ? a.thumbdowncnt : 0;
-			const b_thumbdowncnt = b.thumbdowncnt ? b.thumbdowncnt : 0;
-			const temp1 = a_thumbupcnt - a_thumbdowncnt;
-			const temp2 = b_thumbupcnt - b_thumbdowncnt;
-			return temp2 - temp1;
-		}),
 		removeProfileOfPrivate(question);
 	});
 
