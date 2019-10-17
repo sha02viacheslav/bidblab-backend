@@ -172,7 +172,10 @@ module.exports.userLogin = async (req, res) => {
 		});
 	}
 	const user = await User.findOne({
-		username: result.value.username,
+		$or: [
+			{ username: result.value.username },
+			{ email: result.value.username }
+		]
 	}).exec();
 	if (!user) {
 		return res
