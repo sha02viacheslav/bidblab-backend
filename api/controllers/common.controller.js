@@ -1360,6 +1360,10 @@ module.exports.addThumb = async (req, res) => {
 		answer.thumbdowncnt = 0;
 	}
 
+	if(req.params.thumbType == 1) {
+		question.updatedAt = moment().toDate();
+	}
+
 	await question.save();
 
 
