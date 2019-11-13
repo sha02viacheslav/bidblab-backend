@@ -368,7 +368,7 @@ module.exports.getUserAnswerByuserId = async (req, res) => {
 					$project: {
 						content: "$answers.content",
 						credit: "$answers.credit",
-						"_id": 0,
+						"_id": 1,
 						"title": 1,
 						"tags": 1,
 						"questionPicture": 1,
@@ -446,7 +446,7 @@ module.exports.getUserQuestionByuserId = async (req, res) => {
 			{ $match: query },
 			{
 				$project: {
-					"_id": 0,
+					"_id": 1,
 					"title": 1,
 					"tags": 1,
 					"questionPicture": 1,
