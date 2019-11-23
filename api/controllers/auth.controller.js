@@ -13,6 +13,7 @@ const config = require('../config');
 const User = mongoose.model('User');
 const Admin = mongoose.model('Admin');
 const Invite = mongoose.model('Invite');
+const Login = mongoose.model('Login');
 
 module.exports.signup = async (req, res) => {
 	const schema = joi
@@ -205,6 +206,29 @@ module.exports.userLogin = async (req, res) => {
 			expiresIn: '24h',
 		},
 	);
+
+	const clientIp = (req.headers['x-forwarded-for'] || '').split(',')[0] || req.connection.remoteAddress;
+	const schemaLogin = joi
+		.object({
+			clientIp: joi
+				.string()
+				.trim()
+				.max(20)
+				.required(),
+		})
+		.options({
+			stripUnknown: true,
+		});
+	const resultLogin = schemaLogin.validate({clientIp: clientIp});
+	if (resultLogin.error) {
+		return res
+			.status(401)
+			.json({ err: null, msg: 'Login failed.', data: null });
+	}
+	
+	resultLogin.value.userId = user._id;
+	login = await Login.create(resultLogin.value);
+
 	res.status(200).json({
 		err: null,
 		msg: `Welcome, ${user.username}.`,

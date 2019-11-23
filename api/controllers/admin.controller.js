@@ -18,6 +18,7 @@ const Auction = mongoose.model('Auction');
 const Mail = mongoose.model('Mail');
 const Sitemanager = mongoose.model('Sitemanager');
 const Invite = mongoose.model('Invite');
+const Login = mongoose.model('Login');
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -237,6 +238,8 @@ module.exports.getMembers = async (req, res) => {
 				members[key].totalAnswers = question[0].totalAnswers ? question[0].totalAnswers : 0;
 			}
 		}
+
+		members[key].totalLogins = await Login.count({ "userId": members[key]._id }).exec();
 	}
 	res.status(200).json({
 		err: null,
@@ -483,6 +486,29 @@ module.exports.changeMembersRole = async (req, res) => {
 			totalSuspendMembers,
 			suspendedMembers
 		},
+	});
+};
+
+module.exports.getLogins = async (req, res) => {
+	if (!Validations.isObjectId(req.params.userId)) {
+		return res.status(422).json({
+			err: null,
+			msg: 'userId parameter must be a valid ObjectId.',
+			data: null,
+		});
+	}
+	const logins = await Login.find({userId: req.params.userId})
+		.lean()
+		.exec();
+	if (!logins) {
+		return res
+			.status(404)
+			.json({ err: null, msg: 'Data not found.', data: null });
+	}
+	res.status(200).json({
+		err: null,
+		msg: 'Data retrieved successfully.',
+		data: logins,
 	});
 };
 
@@ -2836,4 +2862,6 @@ module.exports.applyRoleOfMails = async (req, res) => {
 //     data: "succes"
 //   });
 // };
+
+
 

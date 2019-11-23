@@ -363,6 +363,12 @@ router.post(
 	isAdmin,
 	errorHandler(adminCtrl.changeDefaultCredits),
 );
+router.get(
+	'/admin/getLogins/:userId',
+	isAuthenticated,
+	isAdmin,
+	errorHandler(adminCtrl.getLogins),
+);
 // ------------Mail------------
 router.get(
 	'/admin/getMails',
