@@ -369,6 +369,12 @@ router.get(
 	isAdmin,
 	errorHandler(adminCtrl.getLogins),
 );
+router.post(
+	'/admin/sendVerifylink',
+	isAuthenticated,
+	isAdmin,
+	errorHandler(adminCtrl.sendVerifylink),
+);
 // ------------Mail------------
 router.get(
 	'/admin/getMails',

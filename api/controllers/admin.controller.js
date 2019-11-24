@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const joi = require('joi');
 const moment = require('moment');
+const rand = require('rand-token');
 const path = require('path');
 const Validations = require('../utils/validations');
 const Encryption = require('../utils/encryption');
@@ -2862,6 +2863,42 @@ module.exports.applyRoleOfMails = async (req, res) => {
 //     data: "succes"
 //   });
 // };
+
+
+module.exports.sendVerifylink = async (req, res) => {
+
+	for (let index in req.body.userIds) {
+		let user = await User.findById(req.body.userIds[index]).exec();
+		
+		if (user && !user.verified) {
+			user.verificationToken = rand.generate(32);
+			user.verificationTokenExpiry = moment().add(24, 'hours').toDate();
+			await user.save();
+
+			const mailgun = require("mailgun-js");
+			const DOMAIN = 'verify.bidblab.com';
+			const mg = new mailgun({ apiKey: '1c483f030a25d74004bd2083d3f42585-b892f62e-b1b60d12', domain: DOMAIN });
+
+			const data = {
+				from: 'Bidblab <support@bidblab.com>',
+				to: user.email,
+				subject: 'Account Verification',
+				html: `<p>Hello <span style="font-weight: bold">${user.username}</span>, You are signed up but not verified your email address. <br>
+					Please click on the following link to verify your account: <a href="${
+					config.FRONTEND_URI
+					}/gateway/verifyAccount/${user.verificationToken}" style="color: #e91e63;">Verify</a></p>`,
+			};
+			mg.messages().send(data);
+		}
+	}
+
+	res.status(200).json({
+		err: null,
+		msg: 'Verify link was sent successfully.',
+		data: "succes"
+	});
+};
+
 
 
 
