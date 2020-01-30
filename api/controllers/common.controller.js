@@ -2453,7 +2453,7 @@ module.exports.squarePay = async (req, res) => {
 	var request_body = {
 		card_nonce: req.body.nonce,
 		amount_money: {
-			amount: auction.maxUniqueBid.bidPrice * 100, // $1.00 charge
+			amount: parseInt(auction.maxUniqueBid.bidPrice * 100), // $1.00 charge
 			currency: 'USD'
 		},
 		idempotency_key: idempotency_key
