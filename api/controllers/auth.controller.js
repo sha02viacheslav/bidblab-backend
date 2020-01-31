@@ -681,7 +681,7 @@ module.exports.changeProfilePicture = async (req, res) => {
 		});
 	}
 	if (updatedUser.profilePicture && updatedUser.profilePicture.path) {
-		await fs.remove(path.resolve('./', updatedUser.profilePicture.path));
+		await fs.remove(path.resolve('../', updatedUser.profilePicture.path));
 	}
 	updatedUser = await User.findByIdAndUpdate(req.decodedToken.user._id)
 	.select('-createdAt -updatedAt')

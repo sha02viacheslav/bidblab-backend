@@ -1024,7 +1024,7 @@ module.exports.changeQuestionPicture = async (req, res) => {
 			.json({ err: null, msg: 'Account not found.', data: null });
 	}
 	if (question.questionPicture) {
-		await fs.remove(path.resolve('./', question.questionPicture.path));
+		await fs.remove(path.resolve('../', question.questionPicture.path));
 	}
 	const newQuestion = await Question.findById(question._id).lean()
 		.populate({

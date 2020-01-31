@@ -850,7 +850,7 @@ module.exports.updateQuestion = async (req, res) => {
 			.json({ err: null, msg: 'Question not found.', data: null });
 	}
 	if (updatedQuestion.questionPicture) {
-		await fs.remove(path.resolve('./', updatedQuestion.questionPicture.path));
+		await fs.remove(path.resolve('../', updatedQuestion.questionPicture.path));
 	}
 	res.status(200).json({
 		err: null,
@@ -2000,7 +2000,7 @@ module.exports.addAuction = async (req, res) => {
 
 	if (req.files.length && newAuction) {
 		if (newAuction.auctionPicture.length) {
-			await fs.remove(path.resolve('./', newAuction.auctionPicture));
+			await fs.remove(path.resolve('../', newAuction.auctionPicture));
 		}
 		let imagePath = [];
 		req.files.forEach(element => {
@@ -2115,7 +2115,7 @@ module.exports.updateAuction = async (req, res) => {
 
 	if (newAuction) {
 		for (var index = 0; newAuction.auctionPicture[index]; index++) {
-			await fs.remove(path.resolve('./', newAuction.auctionPicture[index]));
+			await fs.remove(path.resolve('../', newAuction.auctionPicture[index]));
 		}
 		let imagePath = [];
 		req.files.forEach(element => {
