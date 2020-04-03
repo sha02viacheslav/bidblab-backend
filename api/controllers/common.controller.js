@@ -668,7 +668,7 @@ module.exports.getUsersFollowing = async (req, res) => {
 	};
 	const projection = {
 		"username": 1,
-		"physicaladdress": 1,
+		"physicalcity": 1,
 		"physicalstate": 1,
 		"profilePicture": 1,
 	};
